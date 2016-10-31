@@ -1,33 +1,47 @@
 #include "world.hpp"
+#include "maths.hpp"
 
 World::World(const b2Vec2 gravity) : _gravity{gravity}, _world{gravity} {}
 
-World& World::step(const float dt, const int vel_it, const int pos_it)
+World& World::step(const float speed, const int vel_it, const int pos_it)
 {
-	_world.Step(dt, vel_it, pos_it);
+	_world.Step(_dt * speed, vel_it, pos_it);
 	return *this;
 }
 
 World& World::update()
 {
-	for (Body& b : _bodies)
-		b.update();
+	// Update bodies
+	for (auto& b : _bodies)
+		b->update();
 
 	return *this;
 }
 
 World& World::render(sf::RenderTarget& target)
 {
-	for (Body& b : _bodies)
-		b.render(target);
+	// Render bodies
+	for (auto& b : _bodies)
+		b->render(target);
 
 	return *this;
 }
 
-Body& World::add_body(const b2BodyDef bdef)
+void World::set_dt(const float dt)
 {
-	_bodies.emplace_back(*this, bdef);
-	return _bodies.back();
+	_dt = lerp(_dt, dt, 0.8);
+}
+
+float World::dt() const
+{
+	return _dt;
+}
+
+void World::update_view(sf::RenderTarget& target, sf::Vector2f origin, float czoom, float angle)
+{
+	sf::View new_view{lerp(target.getView().getCenter(), origin, 0.05f * _dt * 60.f), sf::Vector2f{target.getSize()} * czoom};
+	//new_view.setRotation(angle * 57.295779513f);
+	target.setView(new_view);
 }
 
 b2World& World::get()
