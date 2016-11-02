@@ -29,7 +29,7 @@ World& World::render(sf::RenderTarget& target)
 
 void World::set_dt(const float dt)
 {
-	_dt = lerp(_dt, dt, 0.8);
+	_dt = lerp(_dt, dt, 0.8f);
 }
 
 float World::dt() const
@@ -37,11 +37,89 @@ float World::dt() const
 	return _dt;
 }
 
-void World::update_view(sf::RenderTarget& target, sf::Vector2f origin, float czoom, float angle)
+void World::update_view(sf::RenderTarget& target, sf::Vector2f origin, float czoom)
 {
-	sf::View new_view{lerp(target.getView().getCenter(), origin, 0.05f * _dt * 60.f), sf::Vector2f{target.getSize()} * czoom};
+	sf::View new_view{lerp(target.getView().getCenter(), origin, 0.2f * _dt * 60.f), sf::Vector2f{target.getSize()} * czoom};
 	//new_view.setRotation(angle * 57.295779513f);
 	target.setView(new_view);
+}
+#include <iostream>
+std::vector<sf::Vertex> World::import_map(const std::string fname, std::vector<Body*>& bodies, b2Vec2& car_origin)
+{
+	std::vector<sf::Vertex> ret;
+
+	sf::Image map;
+	if (!map.loadFromFile(fname))
+		return ret;
+
+	struct Line
+	{
+		Line(unsigned x1, unsigned y1, unsigned x2, unsigned y2) : p1{static_cast<float>(x1), static_cast<float>(y1)},
+																   p2{static_cast<float>(x2), static_cast<float>(y2)} {}
+
+		sf::Vector2f p1, p2;
+
+		bool operator==(const Line& other) const
+		{
+			return (p1 == other.p1 && p2 == other.p2) ||
+				   (p2 == other.p1 && p1 == other.p2);
+		}
+
+	};
+
+	b2BodyDef bdef;
+	bdef.type = b2_staticBody;
+
+	std::vector<Line> eliminated;
+	sf::Vector2u image_size = map.getSize();
+	for (unsigned x = 1; x < image_size.x - 1; ++x)
+	for (unsigned y = 1; y < image_size.y - 1; ++y)
+	{
+		const sf::Color main_pixel = map.getPixel(x, y);
+		if (main_pixel == sf::Color::White)
+		{
+			for (unsigned xn = x - 1; xn < x + 2; ++xn)
+			for (unsigned yn = y - 1; yn < y + 2; ++yn)
+			{
+				if (xn == x && yn == y) ++xn; // skip the current pixel
+
+				Line ln{x * 5, y * 5, xn * 5, yn * 5};
+				const sf::Color pixel = map.getPixel(xn, yn);
+				if (pixel == sf::Color::White)
+				{
+					if (std::find(begin(eliminated), end(eliminated), ln) == end(eliminated))
+					{
+						b2EdgeShape wall_shape;
+						wall_shape.Set(b2Vec2{static_cast<float>(ln.p1.x), static_cast<float>(ln.p1.y)}, b2Vec2{static_cast<float>(ln.p2.x), static_cast<float>(ln.p2.y)});
+
+						b2FixtureDef fixdef;
+						fixdef.shape = &wall_shape;
+
+						Body& b = add_body(bdef);
+						b.add_fixture(fixdef);
+						bodies.push_back(&b);
+
+						sf::Vertex v1{ln.p1};
+						v1.color = sf::Color::White;
+						ret.push_back(v1);
+
+						sf::Vertex v2{ln.p2};
+						v2.color = sf::Color::White;
+						ret.push_back(v2);
+
+						eliminated.push_back(ln);
+					}
+				}
+			}
+		}
+		else if (main_pixel.b == 255)
+		{
+			//std::vector<int>(5000000000000000);
+			car_origin = b2Vec2{x * 5.f, y * 5.f};
+		}
+	}
+
+	return ret;
 }
 
 b2World& World::get()

@@ -20,7 +20,10 @@ public:
 	void set_dt(const float dt);
 	float dt() const;
 
-	void update_view(sf::RenderTarget& target, sf::Vector2f origin, float czoom, float angle);
+	void update_view(sf::RenderTarget& target, sf::Vector2f origin, float czoom);
+
+	// changes bodies
+	std::vector<sf::Vertex> import_map(const std::string fname, std::vector<Body*>& bodies, b2Vec2& car_origin);
 
 	template<typename T = Body>
 	T& add_body(const b2BodyDef bdef)

@@ -22,28 +22,19 @@ void Wheel::drag()
 	_body->ApplyForce(drag * fvel, _body->GetWorldCenter(), false);
 }
 
-void Wheel::accelerate(VDirection direction, float power)
+void Wheel::accelerate(float by)
 {
-	float desired_speed = (direction == VDirection::Forward ? _forward_speed : _backwards_speed);
+	float desired_speed = (by > 0.f ? _forward_speed : _backwards_speed);
 
 	b2Vec2 current_fnormal = front_normal();
-	//float current_speed = b2Dot(forward_velocity(), current_fnormal);
 
 	float final_force;
 	if (desired_speed > 0)
-		final_force = _max_accel_force * _backwards_mul * power;
+		final_force = _max_accel_force * _backwards_mul * abs(by);
 	else if (desired_speed < 0)
-		final_force = -_max_accel_force * _forward_mul * power;
+		final_force = -_max_accel_force * _forward_mul * abs(by);
 	else
 		return;
 
 	_body->ApplyForce(final_force * current_fnormal, _body->GetWorldCenter(), true);
-}
-
-void Wheel::apply_torque(Direction direction, float max)
-{
-	if (direction == Direction::Left)
-		_body->ApplyTorque(-max, true);
-	else
-		_body->ApplyTorque(max, true);
 }

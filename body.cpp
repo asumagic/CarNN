@@ -1,7 +1,7 @@
 #include "body.hpp"
 #include <iostream>
 
-Body::Body(World& world, const b2BodyDef bdef, const bool do_render) : _do_render(do_render), _bdef(bdef), _world(world), _next_color{210, 120, 0}
+Body::Body(World& world, const b2BodyDef bdef, const bool do_render) : _do_render(do_render), _next_color{210, 120, 0}, _bdef(bdef), _world(world)
 {
 	_body = _world.get().CreateBody(&bdef);
 }
@@ -77,8 +77,8 @@ b2Fixture& Body::add_fixture(const b2FixtureDef fdef)
 			_shapes.push_back(std::make_unique<sf::ConvexShape>(cshape)); // @TODO modify the pushed shape directly
 		} break;
 
-		default:
-			std::cerr << "WARNING: Adding a fixture with a shape that cannot be drawn" << std::endl;
+		//default:
+			//std::cerr << "WARNING: Adding a fixture with a shape that cannot be drawn" << std::endl;
 		}
 	}
 	return *(_body->CreateFixture(&fdef));
