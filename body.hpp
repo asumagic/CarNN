@@ -5,6 +5,22 @@
 #include "world.hpp"
 
 class World;
+class Body;
+
+enum class BodyType
+{
+	BodyAny = 0,
+	BodyCar,
+	BodyWheel,
+	BodyCheckpoint,
+	BodyWall
+};
+
+struct BodyUserData
+{
+	Body* body;
+	BodyType type = BodyType::BodyAny;
+};
 
 class Body
 {
@@ -12,8 +28,14 @@ public:
 	Body(World& world, const b2BodyDef bdef, const bool do_render = true);
 	virtual ~Body() {}
 
+	// Delete move and copy constructors
+	Body(const Body&) = delete;
+	Body(const Body&&) = delete;
+
 	virtual void update();
 	virtual void render(sf::RenderTarget& target);
+
+	void set_type(const BodyType type);
 
 	b2Vec2 front_normal();
 	b2Vec2 lateral_normal();
@@ -33,6 +55,8 @@ protected:
 
 	std::vector<std::unique_ptr<sf::Shape>> _shapes;
 	sf::Color _next_color;
+
+	BodyUserData _bud;
 
 	b2BodyDef _bdef;
 	b2Body* _body;

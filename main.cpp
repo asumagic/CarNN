@@ -1,39 +1,64 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
+#include <iostream>
+#include <fstream>
+#include <jsoncpp/json/value.h>
+#include <jsoncpp/json/reader.h>
 #include "world.hpp"
+#include "entities/checkpoint.hpp"
 #include "entities/wheel.hpp"
 #include "entities/car.hpp"
 #include "neural/network.hpp"
-#include <iostream>
 #include "randomutil.hpp"
-int main()
+
+int app(sf::RenderWindow& win)
 {
 	World w{b2Vec2{0.f, 0.f}};
 
-	/*** Push box obstacles ***/
-	std::vector<Body*> obstacles;
+	std::ifstream race_config{"race.json", std::ios::binary};
+	Json::Value root;
+	Json::Reader reader;
+	reader.parse(race_config, root, false);
+
+	Body* wall_body;
 	b2Vec2 car_pos;
-	std::vector<sf::Vertex> wall_vertices = w.import_map("race.png", obstacles, car_pos);
-	/*obstacles.reserve(500);
-	for (int i = 0; i < 250; ++i)
+	std::vector<sf::Vertex> wall_vertices = w.import_map(root["filepath"].asString(), wall_body, car_pos);
+
+	b2BodyDef cp_bdef;
+	cp_bdef.type = b2_staticBody;
+	sf::VertexArray checkpoint_vertices{sf::Lines};
 	{
-		b2BodyDef bdef;
-		bdef.position = {(float)(rand() % 100 + 10), (float)(rand() % 100 + 10)};
-		bdef.type = b2_dynamicBody;
+		size_t i = 0;
+		for (const Json::Value& cp : root["checkpoints"])
+		{
+			sf::Vector2f p1{cp["p1"].get(Json::ArrayIndex{0}, 0).asFloat() * 5.f, cp["p1"].get(Json::ArrayIndex{1}, 0).asFloat() * 5.f},
+						 p2{cp["p2"].get(Json::ArrayIndex{0}, 0).asFloat() * 5.f, cp["p2"].get(Json::ArrayIndex{1}, 0).asFloat() * 5.f};
 
-		b2PolygonShape shape;
-		shape.SetAsBox(1.5f, 1.5f);
+			sf::Vector2f center{p1 + (p2 - p1) / 2.f};
 
-		b2FixtureDef fixdef;
-		fixdef.shape = &shape;
-		fixdef.density = 200.f;
-		fixdef.friction = 0.2f;
+			// Extend the line by 5 pixels each side
+			p1.x += (p1.x > center.x) ? 5.f : -5.f;  // @todo compact if possible
+			p2.x += (p2.x > center.x) ? 5.f : -5.f;  // for (float& x : {p1.x, p2.x} doesn't work since you can't get a reference to both
+			p1.y += (p1.y > center.y) ? 5.f : -5.f;
+			p2.y += (p2.y > center.y) ? 5.f : -5.f;
 
-		Body& box = w.add_body(bdef).with_color(sf::Color{static_cast<uint8_t>(rand() % 150), static_cast<uint8_t>(rand() % 150), static_cast<uint8_t>(rand() % 150)}); // @TODO fix this uglyness
-		box.get().SetTransform(box.get().GetPosition(), (rand() % 10000) / 300.f); // @TODO fix this uglyness
-		box.add_fixture(fixdef);
-		obstacles.push_back(&box);
-	}*/
+			const static sf::Color cp_col{0, 127, 0, 100};
+
+			checkpoint_vertices.append(sf::Vertex{p1, cp_col});
+			checkpoint_vertices.append(sf::Vertex{p2, cp_col});
+
+			b2EdgeShape cp_shape;
+			cp_shape.Set(b2Vec2{p1.x, p1.y}, b2Vec2{p2.x, p2.y});
+
+			b2FixtureDef cp_fdef;
+			cp_fdef.shape = &cp_shape;
+			cp_fdef.isSensor = true;
+
+			Checkpoint& cpb = w.add_body<Checkpoint>(cp_bdef);
+			cpb.set_id(i++);
+			cpb.add_fixture(cp_fdef);
+		}
+	}
 
 	/*** Define a car ***/
 	b2BodyDef bdef;
@@ -42,10 +67,10 @@ int main()
 
 	std::array<b2Vec2, 8> vertices = {{
 		{-1.50f, -0.30f},
-		{-1.00f, -2.00f},
+		{-1.00f, -1.90f},
 		{-0.50f, -2.10f},
 		{ 0.50f, -2.10f},
-		{ 1.00f, -2.00f},
+		{ 1.00f, -1.90f},
 		{ 1.50f, -0.30f},
 		{ 1.50f,  2.00f},
 		{-1.50f,  2.00f}
@@ -57,22 +82,19 @@ int main()
 	b2FixtureDef fixdef;
 	fixdef.shape = &shape;
 	fixdef.density = 50.f;
-	fixdef.friction = 0.2f;
+	fixdef.friction = 0.4f;
+	fixdef.restitution = 0.2f;
 
 	Car& c = w.add_body<Car>(bdef);
 	c.with_color(sf::Color{200, 50, 0}).add_fixture(fixdef);
 	c.transform(car_pos, static_cast<float>(0.5 * M_PI));
 
-	Network net{200, 5, total_rays + 2};
+	// Add the listener AFTER moving the car
+	CarCheckpointListener listener;
+	w.get().SetContactListener(&listener);
+
+	Network net{400, 5, total_rays + 2};
 	c.add_synapses(net);
-
-	/*** Define rendering details ***/
-
-	// Define the render window
-	sf::ContextSettings settings;
-	settings.antialiasingLevel = 16;
-	sf::RenderWindow win{sf::VideoMode{800, 600}, "Neural Network", sf::Style::Default, settings};
-	win.setFramerateLimit(120);
 
 	// Define the time data (delta time + simulation speed)
 	sf::Clock dtclock;
@@ -84,6 +106,14 @@ int main()
 	sf::Font infofnt;
 	if (!infofnt.loadFromFile("Cantarell-Bold.ttf"))
 		std::cerr << "WARNING: Failed to load font." << std::endl;
+
+	std::vector<Axon>& axons = net.axons();
+	const std::array<const std::string, 5> labels {{ "Fwd", "Bck", "Left", "Right", "Drift" }};
+	for (size_t i = 0; i < axons.size(); ++i)
+	{
+		axons[i].set_font(&infofnt);
+		axons[i].set_label(labels[i]);
+	}
 
 	sf::Text car_info;
 	car_info.setFont(infofnt);
@@ -111,8 +141,8 @@ int main()
 				win.close();
 				break;
 			case sf::Event::KeyPressed:
-				if (ev.key.code == sf::Keyboard::Escape)    win.close();
-				else if (ev.key.code == sf::Keyboard::R)    { net = Network{200, 5, total_rays + 2}; c.add_synapses(net); }
+				if (ev.key.code == sf::Keyboard::Escape)    { return 0; }
+				else if (ev.key.code == sf::Keyboard::R)    { return 2; }
 				break;
 			case sf::Event::MouseWheelScrolled:
 				czoom = std::max(czoom - (ev.mouseWheelScroll.delta * .01f), 0.01f);
@@ -131,7 +161,8 @@ int main()
 		c.accelerate(static_cast<float>(results[Axon_Forward] - results[Axon_Backwards]));
 
 		win.clear(sf::Color{20, 20, 20});
-		c.compute_raycasts(obstacles);
+		c.compute_raycasts(*wall_body);
+		win.draw(checkpoint_vertices);
 		w.step(speed, 6, 2).update().render(win);
 		win.draw(wall_vertices.data(), wall_vertices.size(), sf::Lines);
 		w.set_dt(dtclock.restart().asSeconds());
@@ -156,4 +187,15 @@ int main()
 	}
 
 	return 0;
+}
+
+int main()
+{
+	// Define the render window
+	sf::ContextSettings settings;
+	settings.antialiasingLevel = 16;
+	sf::RenderWindow win{sf::VideoMode{800, 600}, "Neural Network", sf::Style::Default, settings};
+	win.setFramerateLimit(120);
+
+	while (app(win) == 2);
 }

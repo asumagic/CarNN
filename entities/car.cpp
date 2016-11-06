@@ -1,8 +1,26 @@
 #include "car.hpp"
 #include "../maths.hpp"
+#include <iostream>
+
+void CarCheckpointListener::BeginContact(b2Contact* contact)
+{
+	b2Fixture *fixA = contact->GetFixtureA(), *fixB = contact->GetFixtureB();
+	BodyUserData &bodyA_BUD = *static_cast<BodyUserData*>(fixA->GetBody()->GetUserData()),
+				 &bodyB_BUD = *static_cast<BodyUserData*>(fixB->GetBody()->GetUserData());
+
+	if (bodyA_BUD.type == BodyType::BodyCar && bodyB_BUD.type == BodyType::BodyCheckpoint)
+		static_cast<Car*>(bodyA_BUD.body)->contact_checkpoint(*static_cast<Checkpoint*>(bodyB_BUD.body));
+	else if (bodyB_BUD.type == BodyType::BodyCar && bodyA_BUD.type == BodyType::BodyCheckpoint)
+		static_cast<Car*>(bodyB_BUD.body)->contact_checkpoint(*static_cast<Checkpoint*>(bodyA_BUD.body));
+}
+
+void CarCheckpointListener::EndContact(b2Contact*) {}
+
 
 Car::Car(World& world, const b2BodyDef bdef, const bool do_render) : Body(world, bdef, do_render)
 {
+	set_type(BodyType::BodyCar);
+
 	b2RevoluteJointDef rjdef;
 	rjdef.bodyA = _body;
 	rjdef.enableLimit = true;
@@ -53,7 +71,7 @@ Car::Car(World& world, const b2BodyDef bdef, const bool do_render) : Body(world,
 		}
 	}
 }
-#include <iostream>
+
 void Car::update()
 {
 	for (Wheel* wheel : _wheels)
@@ -77,6 +95,15 @@ void Car::render(sf::RenderTarget& target)
 	Body::render(target);
 }
 
+void Car::contact_checkpoint(Checkpoint& cp)
+{
+	if (_reached_checkpoints < cp.get_id() + 1)
+	{
+		_reached_checkpoints = cp.get_id() + 1;
+		std::cout << "Reached checkpoint " << _reached_checkpoints << std::endl;
+	}
+}
+
 void Car::accelerate(float by)
 {
 	for (size_t i = 0; i < 2; ++i)
@@ -87,7 +114,6 @@ void Car::accelerate(float by)
 
 void Car::apply_torque(float by)
 {
-	by *= 0.01f * _angle_lock;
 	for (size_t i = 0; i < 2; ++i)
 	{
 		float desired_angle = std::max(-_angle_lock, std::min(_angle_lock, by));
@@ -114,10 +140,10 @@ void Car::transform(const b2Vec2 pos, const float angle)
 		wheel->get().SetTransform(pos, angle);
 }
 
-void Car::compute_raycasts(std::vector<Body*>& obstacles)
+void Car::compute_raycasts(Body& wall_body)
 {
 	const size_t ray_count = _rays.size() / 2;
-	const float radius = 96.f;
+	const float radius = 48.f;
 	for (size_t i = 0; i < ray_count; ++i)
 	{
 		float rad_angle = _body->GetAngle() - (static_cast<float>(i) / static_cast<float>(ray_count - 1)) * static_cast<float>(M_PI);
@@ -128,9 +154,8 @@ void Car::compute_raycasts(std::vector<Body*>& obstacles)
 		rin.maxFraction = 1.f;
 
 		float closest_frac = 1.f;
-		for (Body* b : obstacles)
+		for (b2Fixture* f = wall_body.get().GetFixtureList(); f; f = f->GetNext())
 		{
-			b2Fixture* f = b->get().GetFixtureList();
 			b2RayCastOutput rout;
 			if (f->RayCast(&rout, rin, 0) && rout.fraction < closest_frac)
 				closest_frac = rout.fraction;

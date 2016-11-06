@@ -1,8 +1,12 @@
 #include "network.hpp"
 
-Network::Network(size_t neurons, size_t outputs, size_t synapses) : _neurons(neurons), _axons(outputs)
+Network::Network(size_t neurons, size_t outputs, size_t synapses) : _neurons(neurons)
 {
 	_synapses.reserve(synapses);
+	_axons.reserve(outputs);
+
+	for (size_t i = 0; i < outputs; ++i)
+		_axons.emplace_back(i);
 
 	for (Axon& axon : _axons)
 	for (Neuron& neuron : _neurons)
@@ -16,8 +20,8 @@ Network& Network::update()
 	for (Neuron& neuron : _neurons)
 		neuron.update();
 
-	for (Axon& axon : _axons)
-		axon.update();
+	for (size_t i = 0; i < _axons.size(); ++i)
+		_axons[i].update(i);
 
 	return *this;
 }

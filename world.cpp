@@ -40,11 +40,10 @@ float World::dt() const
 void World::update_view(sf::RenderTarget& target, sf::Vector2f origin, float czoom)
 {
 	sf::View new_view{lerp(target.getView().getCenter(), origin, 0.2f * _dt * 60.f), sf::Vector2f{target.getSize()} * czoom};
-	//new_view.setRotation(angle * 57.295779513f);
 	target.setView(new_view);
 }
-#include <iostream>
-std::vector<sf::Vertex> World::import_map(const std::string fname, std::vector<Body*>& bodies, b2Vec2& car_origin)
+
+std::vector<sf::Vertex> World::import_map(const std::string fname, Body*& wall, b2Vec2& car_origin)
 {
 	std::vector<sf::Vertex> ret;
 
@@ -52,23 +51,9 @@ std::vector<sf::Vertex> World::import_map(const std::string fname, std::vector<B
 	if (!map.loadFromFile(fname))
 		return ret;
 
-	struct Line
-	{
-		Line(unsigned x1, unsigned y1, unsigned x2, unsigned y2) : p1{static_cast<float>(x1), static_cast<float>(y1)},
-																   p2{static_cast<float>(x2), static_cast<float>(y2)} {}
-
-		sf::Vector2f p1, p2;
-
-		bool operator==(const Line& other) const
-		{
-			return (p1 == other.p1 && p2 == other.p2) ||
-				   (p2 == other.p1 && p1 == other.p2);
-		}
-
-	};
-
 	b2BodyDef bdef;
 	bdef.type = b2_staticBody;
+	wall = &add_body(bdef);
 
 	std::vector<Line> eliminated;
 	sf::Vector2u image_size = map.getSize();
@@ -95,9 +80,7 @@ std::vector<sf::Vertex> World::import_map(const std::string fname, std::vector<B
 						b2FixtureDef fixdef;
 						fixdef.shape = &wall_shape;
 
-						Body& b = add_body(bdef);
-						b.add_fixture(fixdef);
-						bodies.push_back(&b);
+						wall->add_fixture(fixdef);
 
 						sf::Vertex v1{ln.p1};
 						v1.color = sf::Color::White;

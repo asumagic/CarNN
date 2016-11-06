@@ -14,8 +14,11 @@ public:
 	Network& update();
 	std::vector<double> results();
 
+	inline std::vector<Synapse>& synapses() { return _synapses; }
+	inline std::vector<Neuron>&  neurons()  { return _neurons;  }
+	inline std::vector<Axon>&    axons()    { return _axons;    }
+
 	Synapse& add_synapse(double& input); // UB if add_synapse is called more times than the total synapses count (c.f. 3rd argument)
-	std::vector<Synapse>& get_synapses() { return _synapses; }
 
 	void render(sf::RenderTarget& target);
 

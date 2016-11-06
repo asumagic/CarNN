@@ -5,9 +5,10 @@
 #include "../neural/network.hpp"
 #include "../body.hpp"
 #include "../world.hpp"
+#include "checkpoint.hpp"
 #include "wheel.hpp"
 
-constexpr size_t total_rays = 10;
+constexpr size_t total_rays = 15;
 
 enum AxonControl : size_t
 {
@@ -18,6 +19,12 @@ enum AxonControl : size_t
 	Axon_Drift
 };
 
+class CarCheckpointListener : public b2ContactListener
+{
+	void BeginContact(b2Contact* contact) override;
+	void EndContact(b2Contact* contact) override;
+};
+
 class Car : public Body
 {
 public:
@@ -26,13 +33,15 @@ public:
 	void update() override;
 	void render(sf::RenderTarget& target) override;
 
+	void contact_checkpoint(Checkpoint& cp);
+
 	void accelerate(float by);
 	void apply_torque(float by);
 	void set_drift(const float drift_amount);
 
 	void transform(const b2Vec2 pos, const float angle);
 
-	void compute_raycasts(std::vector<Body*>& obstacles);
+	void compute_raycasts(Body& wall_body);
 
 	void add_synapses(Network& n);
 
@@ -45,6 +54,8 @@ private:
 	double _net_front_speed = 0., _net_lateral_speed = 0.;
 
 	float _drift_amount = 0.0;
+
+	size_t _reached_checkpoints = 0;
 
 	const float _angle_lock = 0.9f,
 				_turn_speed = 6.f;

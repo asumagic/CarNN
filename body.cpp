@@ -4,6 +4,8 @@
 Body::Body(World& world, const b2BodyDef bdef, const bool do_render) : _do_render(do_render), _next_color{210, 120, 0}, _bdef(bdef), _world(world)
 {
 	_body = _world.get().CreateBody(&bdef);
+	_bud.body = this;
+	_body->SetUserData(&_bud);
 }
 
 void Body::update()
@@ -30,6 +32,11 @@ void Body::render(sf::RenderTarget& target)
 		for (auto& shape : _shapes)
 			target.draw(*shape);
 	}
+}
+
+void Body::set_type(const BodyType type)
+{
+	_bud.type = type;
 }
 
 b2Vec2 Body::front_normal()
@@ -77,8 +84,11 @@ b2Fixture& Body::add_fixture(const b2FixtureDef fdef)
 			_shapes.push_back(std::make_unique<sf::ConvexShape>(cshape)); // @TODO modify the pushed shape directly
 		} break;
 
-		//default:
-			//std::cerr << "WARNING: Adding a fixture with a shape that cannot be drawn" << std::endl;
+		case b2Shape::e_circle:
+		case b2Shape::e_edge:
+		case b2Shape::e_chain:
+		default:
+			break;
 		}
 	}
 	return *(_body->CreateFixture(&fdef));
