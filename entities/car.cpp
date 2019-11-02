@@ -12,6 +12,11 @@ void CarCheckpointListener::BeginContact(b2Contact* contact)
 		static_cast<Car*>(bodyA_BUD.body)->contact_checkpoint(*static_cast<Checkpoint*>(bodyB_BUD.body));
 	else if (bodyB_BUD.type == BodyType::BodyCar && bodyA_BUD.type == BodyType::BodyCheckpoint)
 		static_cast<Car*>(bodyB_BUD.body)->contact_checkpoint(*static_cast<Checkpoint*>(bodyA_BUD.body));
+
+	if (bodyA_BUD.type == BodyType::BodyCar && bodyB_BUD.type == BodyType::BodyWall)
+		static_cast<Car*>(bodyA_BUD.body)->fitness_penalty(100);
+	else if (bodyB_BUD.type == BodyType::BodyCar && bodyA_BUD.type == BodyType::BodyWall)
+		static_cast<Car*>(bodyB_BUD.body)->fitness_penalty(100);
 }
 
 void CarCheckpointListener::EndContact(b2Contact*) {}
@@ -52,10 +57,11 @@ Car::Car(World& world, const b2BodyDef bdef, const bool do_render) : Body(world,
 		b2FixtureDef fixdef;
 		fixdef.shape = &shape;
 		fixdef.density = 100.f;
+		fixdef.filter.groupIndex = -1;
 
 		_wheels.push_back(&_world.add_body<Wheel>(bdef));
 		Wheel* w = _wheels.back();
-		w->with_color(sf::Color{20, 20, 20}).add_fixture(fixdef);
+		w->with_color(sf::Color{20, 20, 20, 40}).add_fixture(fixdef);
 
 		rjdef.bodyB = &w->get();
 
@@ -72,6 +78,21 @@ Car::Car(World& world, const b2BodyDef bdef, const bool do_render) : Body(world,
 	}
 }
 
+void Car::reset()
+{
+	_latest_checkpoint = nullptr;
+	_fitness_bias = 0.0f;
+	//_net_feedback = 0.0f;
+	_fitness = 0.0f;
+
+	for (Wheel* wheel : _wheels)
+	{
+		wheel->get().SetLinearVelocity({0.0f, 0.0f});
+	}
+
+	get().SetLinearVelocity({0.0f, 0.0f});
+}
+
 void Car::update()
 {
 	for (Wheel* wheel : _wheels)
@@ -83,25 +104,91 @@ void Car::update()
 
 	Body::update();
 
-	_net_front_speed = static_cast<double>(forward_velocity().Length()) / 8.;
-	_net_lateral_speed = static_cast<double>(lateral_velocity().Length()) / 8.;
+	float angle = _body->GetAngle();
+	_net_direction = 0.5f * b2Vec2{std::cos(angle), std::sin(angle)} + b2Vec2{0.5f, 0.5f};
 }
 
 void Car::render(sf::RenderTarget& target)
 {
-	for (Wheel* wheel : _wheels)
-		wheel->render(target);
 	target.draw(_rays.data(), _rays.size(), sf::Lines);
 	Body::render(target);
 }
 
 void Car::contact_checkpoint(Checkpoint& cp)
 {
-	if (_reached_checkpoints < cp.get_id() + 1)
+	if (reached_checkpoints() == cp.id)
 	{
-		_reached_checkpoints = cp.get_id() + 1;
-		std::cout << "Reached checkpoint " << _reached_checkpoints << std::endl;
+		_latest_checkpoint = &cp;
 	}
+}
+
+void Car::set_target_checkpoint(Checkpoint* cp)
+{
+	_target_checkpoint = cp;
+}
+
+std::size_t Car::reached_checkpoints() const
+{
+	return _latest_checkpoint != nullptr ? _latest_checkpoint->id + 1 : 0;
+}
+
+b2Vec2 Car::direction_to_objective() const
+{
+	if (_target_checkpoint == nullptr)
+	{
+		return {0.0f, 0.0f};
+	}
+
+	b2Vec2 dir = b2Vec2{_target_checkpoint->origin.x, _target_checkpoint->origin.y} - _body->GetPosition();
+	dir.Normalize();
+
+	return dir;
+}
+
+float Car::fitness() const
+{
+	const sf::Vector2f body_origin{_body->GetPosition().x, _body->GetPosition().y};
+
+	if (reached_checkpoints() == 0)
+	{
+		return 0.0f;
+	}
+
+	if (_target_checkpoint == nullptr)
+	{
+		return _fitness + _fitness_bias;
+	}
+
+	const auto pow2 = [](auto a) { return a * a; };
+
+	const float body_distance = std::sqrt(
+		pow2(_target_checkpoint->origin.x - body_origin.x) +
+		pow2(_target_checkpoint->origin.y - body_origin.y)
+	);
+
+	const float checkpoint_distance = std::sqrt(
+		pow2(_target_checkpoint->origin.x - _latest_checkpoint->origin.x) +
+		pow2(_target_checkpoint->origin.y - _latest_checkpoint->origin.y)
+	);
+
+	const float normalized_distance = 1.0f - std::clamp(body_distance / checkpoint_distance, 0.0f, 1.0f);
+
+	const float scale = 1000.0f;
+
+	_fitness = std::max(
+		_fitness,
+		(
+			(reached_checkpoints() + 1) * scale
+		  + normalized_distance * scale
+		)
+	);
+
+	return _fitness + _fitness_bias;
+}
+
+void Car::fitness_penalty(float value)
+{
+	_fitness_bias -= value;
 }
 
 void Car::accelerate(float by)
@@ -132,7 +219,12 @@ void Car::set_drift(const float drift_amount)
 {
 	_drift_amount = drift_amount;
 }
-
+/*
+void Car::feedback(float v)
+{
+	_net_feedback = v;
+}
+*/
 void Car::transform(const b2Vec2 pos, const float angle)
 {
 	_body->SetTransform(pos, angle);
@@ -179,11 +271,24 @@ void Car::compute_raycasts(Body& wall_body)
 	}
 }
 
-void Car::add_synapses(Network &n)
+void Car::update_inputs(proper::Network &n)
 {
-	for (double& in : _net_inputs)
-		n.add_synapse(in);
+	auto& inputs = n.inputs();
 
-	n.add_synapse(_net_front_speed);
-	n.add_synapse(_net_lateral_speed);
+	assert(inputs.neurons.size() == _net_inputs.size() + 4);
+
+	std::size_t i = 0;
+
+	b2Vec2 objective_dir = 0.5f * direction_to_objective() + b2Vec2(0.5f, 0.5f);
+
+	//inputs.neurons[i++].value = _net_feedback;
+	inputs.neurons[i++].value = objective_dir.x;
+	inputs.neurons[i++].value = objective_dir.y;
+	inputs.neurons[i++].value = _net_direction.x;
+	inputs.neurons[i++].value = _net_direction.y;
+
+	for (std::size_t j = 0; j < _net_inputs.size(); ++j, ++i)
+	{
+		inputs.neurons[i].value = _net_inputs[j];
+	}
 }

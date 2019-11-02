@@ -9,6 +9,17 @@ double random_double(double min, double max)
 	return distrib(mersenne);
 }
 
+double random_double()
+{
+	return random_double(0.0, 1.0);
+}
+
+double random_gauss_double(double mean, double stddev)
+{
+	std::normal_distribution<double> distrib(mean, stddev);
+	return distrib(mersenne);
+}
+
 int random_int(int min, int max)
 {
 	std::uniform_int_distribution<int> distrib(min, max);

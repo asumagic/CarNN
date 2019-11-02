@@ -2,8 +2,8 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <fstream>
-#include <jsoncpp/json/value.h>
-#include <jsoncpp/json/reader.h>
+#include <json/value.h>
+#include <json/reader.h>
 #include "world.hpp"
 #include "entities/checkpoint.hpp"
 #include "entities/wheel.hpp"
@@ -23,6 +23,8 @@ int app(sf::RenderWindow& win)
 	Body* wall_body;
 	b2Vec2 car_pos;
 	std::vector<sf::Vertex> wall_vertices = w.import_map(root["filepath"].asString(), wall_body, car_pos);
+
+	std::vector<Checkpoint*> checkpoints;
 
 	b2BodyDef cp_bdef;
 	cp_bdef.type = b2_staticBody;
@@ -55,14 +57,15 @@ int app(sf::RenderWindow& win)
 			cp_fdef.isSensor = true;
 
 			Checkpoint& cpb = w.add_body<Checkpoint>(cp_bdef);
-			cpb.set_id(i++);
+			cpb.origin = center;
+			cpb.id = i++;
 			cpb.add_fixture(cp_fdef);
+
+			checkpoints.push_back(&cpb);
 		}
 	}
 
-	/*** Define a car ***/
 	b2BodyDef bdef;
-	bdef.position = {0.f, 1.3f};
 	bdef.type = b2_dynamicBody;
 
 	std::array<b2Vec2, 8> vertices = {{
@@ -82,23 +85,65 @@ int app(sf::RenderWindow& win)
 	b2FixtureDef fixdef;
 	fixdef.shape = &shape;
 	fixdef.density = 50.f;
-	fixdef.friction = 0.4f;
+	fixdef.friction = 0.7f;
 	fixdef.restitution = 0.2f;
+	fixdef.filter.groupIndex = -1;
 
-	Car& c = w.add_body<Car>(bdef);
-	c.with_color(sf::Color{200, 50, 0}).add_fixture(fixdef);
-	c.transform(car_pos, static_cast<float>(0.5 * M_PI));
+	proper::Mutator mutator;
+
+	std::vector<Car*> cars;
+	std::vector<proper::Network> networks;
+
+	float total_time = 0.0f;
+
+	const auto reset_car = [&](Car& car) {
+		car.transform(car_pos, static_cast<float>(0.5 * M_PI));
+		car.reset();
+	};
+
+	const auto reset = [&] {
+		total_time = 0.0f;
+
+		for (auto& car : cars)
+		{
+			reset_car(*car);
+		}
+	};
+
+	const auto mutate = [&] {
+		std::vector<proper::NetworkResult> results;
+
+		for (std::size_t i = 0; i < cars.size(); ++i)
+		{
+			results.push_back({
+				&networks[i],
+				cars[i]
+			});
+		}
+
+		mutator.darwin(results);
+
+		reset();
+	};
+
+	for (std::size_t i = 0; i < 150; ++i)
+	{
+		Car& car = w.add_body<Car>(bdef);
+		cars.push_back(&car);
+
+		car.with_color(sf::Color{200, 50, 0, 50}).add_fixture(fixdef);
+		car.transform(car_pos, static_cast<float>(0.5 * M_PI));
+
+		networks.emplace_back(total_rays + 4, 5, 20);
+	}
 
 	// Add the listener AFTER moving the car
 	CarCheckpointListener listener;
 	w.get().SetContactListener(&listener);
 
-	Network net{400, 5, total_rays + 2};
-	c.add_synapses(net);
-
 	// Define the time data (delta time + simulation speed)
 	sf::Clock dtclock;
-	float speed = 10.f;
+	float speed = 10.0f;
 
 	// Define the camera settings
 	float czoom = 0.1f;
@@ -107,13 +152,20 @@ int app(sf::RenderWindow& win)
 	if (!infofnt.loadFromFile("Cantarell-Bold.ttf"))
 		std::cerr << "WARNING: Failed to load font." << std::endl;
 
-	std::vector<Axon>& axons = net.axons();
 	const std::array<const std::string, 5> labels {{ "Fwd", "Bck", "Left", "Right", "Drift" }};
-	for (size_t i = 0; i < axons.size(); ++i)
+
+	std::vector<Axon> axons;
+
+	if (axons.empty())
 	{
-		axons[i].set_font(&infofnt);
-		axons[i].set_label(labels[i]);
+		for (std::size_t i = 0; i < labels.size(); ++i)
+		{
+			Axon& axon = axons.emplace_back(i);
+		}
 	}
+
+	bool fast_simulation = false;
+	std::size_t ticks = 0;
 
 	sf::Text car_info;
 	car_info.setFont(infofnt);
@@ -123,6 +175,14 @@ int app(sf::RenderWindow& win)
 	car_info.setPosition(16.f, 16.f);
 	car_info.setStyle(sf::Text::Bold);
 
+	sf::Text fitness_info;
+	fitness_info.setFont(infofnt);
+	fitness_info.setColor(sf::Color::White);
+	fitness_info.setCharacterSize(30);
+	fitness_info.setScale(0.4f, 0.4f);
+	fitness_info.setPosition(256.f, 16.f);
+	fitness_info.setStyle(sf::Text::Bold);
+
 	sf::Text fps_info;
 	fps_info.setFont(infofnt);
 	fps_info.setColor(sf::Color{80, 80, 80});
@@ -130,60 +190,116 @@ int app(sf::RenderWindow& win)
 	fps_info.setScale(0.4f, 0.4f);
 	fps_info.setStyle(sf::Text::Bold);
 
-	sf::Event ev;
 	while (win.isOpen())
 	{
-		while (win.pollEvent(ev))
-		{
-			switch (ev.type)
-			{
-			case sf::Event::Closed:
-				win.close();
-				break;
-			case sf::Event::KeyPressed:
-				if (ev.key.code == sf::Keyboard::Escape)    { return 0; }
-				else if (ev.key.code == sf::Keyboard::R)    { return 2; }
-				break;
-			case sf::Event::MouseWheelScrolled:
-				czoom = std::max(czoom - (ev.mouseWheelScroll.delta * .01f), 0.01f);
-				break;
-			}
-		}
+		auto top_car_it = std::max_element(cars.begin(), cars.end(), [&](const Car* a, const Car* b) {
+			return a->fitness() <
+				   b->fitness();
+		});
 
-		const b2Vec2 b2target = c.get().GetPosition();
-		w.update_view(win, sf::Vector2f{b2target.x, b2target.y}, czoom);
+		Car& top_car = **top_car_it;
 
 		// @TODO move this mess
-		const auto results = net.results();
+		#pragma omp parallel for
+		for (std::size_t i = 0; i < cars.size(); ++i)
+		{
+			Car& c = *cars[i];
+			proper::Network& net = networks[i];
 
-		c.set_drift(static_cast<float>(results[Axon_Drift]));
-		c.apply_torque(static_cast<float>(results[Axon_Steer_Right] - results[Axon_Steer_Left]));
-		c.accelerate(static_cast<float>(results[Axon_Forward] - results[Axon_Backwards]));
+			c.set_target_checkpoint(c.reached_checkpoints() == checkpoints.size() ? nullptr : checkpoints[c.reached_checkpoints()]);
 
-		win.clear(sf::Color{20, 20, 20});
-		c.compute_raycasts(*wall_body);
-		win.draw(checkpoint_vertices);
-		w.step(speed, 6, 2).update().render(win);
-		win.draw(wall_vertices.data(), wall_vertices.size(), sf::Lines);
-		w.set_dt(dtclock.restart().asSeconds());
+			c.update_inputs(net);
+			net.update();
+			const auto& results = net.outputs();
 
-		sf::View cview{win.getView()};
-		win.setView(sf::View{sf::FloatRect{0.f, 0.f, static_cast<float>(win.getSize().x), static_cast<float>(win.getSize().y)}});
+			c.set_drift(static_cast<float>(results.neurons[Axon_Drift].value));
+			c.apply_torque(static_cast<float>(results.neurons[Axon_Steer_Right].value - results.neurons[Axon_Steer_Left].value));
+			c.accelerate(static_cast<float>(results.neurons[Axon_Forward].value - results.neurons[Axon_Backwards].value));
+			//c.feedback(static_cast<float>(results.neurons[Axon_Feedback].value));
 
-		car_info.setString(sf::String("Speed : ") + std::to_string(static_cast<unsigned short>(c.forward_velocity().Length() * 20.f)) + "km/h");
+			c.compute_raycasts(*wall_body);
+		}
 
-		fps_info.setString(std::to_string(static_cast<unsigned short>(1.f / w.dt())) + "fps");
-		fps_info.setPosition(8.f, win.getSize().y - 16.f);
+		float real_dt = dtclock.restart().asSeconds();
+		w.set_dt(1.0f / 30.0f);
+		w.step(speed, 4, 2).update();
 
-		net.update();
-		net.render(win);
+		++ticks;
+		total_time += w.dt();
 
-		win.draw(car_info);
-		win.draw(fps_info);
+		if (total_time > 42.0f)
+		{
+			mutate();
+		}
 
-		win.setView(cview);
+		if (!fast_simulation || ticks % 30 == 0)
+		{
+			for (sf::Event ev; win.pollEvent(ev);)
+			{
+				switch (ev.type)
+				{
+				case sf::Event::Closed:
+					win.close();
+					break;
 
-		win.display();
+				case sf::Event::KeyPressed:
+					if (ev.key.code == sf::Keyboard::Escape) { return 0; }
+					else if (ev.key.code == sf::Keyboard::R) { return 2; }
+					else if (ev.key.code == sf::Keyboard::M) { mutate(); }
+					else if (ev.key.code == sf::Keyboard::F) { fast_simulation = fast_simulation ? false : true; }
+					break;
+
+				case sf::Event::MouseWheelScrolled:
+					czoom = std::max(czoom - (ev.mouseWheelScroll.delta * .01f), 0.01f);
+					break;
+
+				default:
+					break;
+				}
+			}
+
+			win.clear(sf::Color{20, 20, 20});
+			win.draw(checkpoint_vertices);
+			win.draw(wall_vertices.data(), wall_vertices.size(), sf::Lines);
+			w.render(win);
+
+			const b2Vec2 b2target = top_car.get().GetPosition();
+			w.update_view(win, sf::Vector2f{b2target.x, b2target.y}, czoom);
+
+			sf::View cview{win.getView()};
+			float ui_scale = 0.5f;
+			win.setView(sf::View{sf::FloatRect{0.f, 0.f, static_cast<float>(win.getSize().x) * ui_scale, static_cast<float>(win.getSize().y) * ui_scale}});
+
+			{
+				std::size_t i = 0;
+				for (auto& dummy : axons)
+				{
+					dummy.set_font(&infofnt);
+					dummy.set_label(labels[i]);
+					dummy.update(i);
+					dummy.write(networks[std::distance(cars.begin(), top_car_it)].outputs().neurons[i].value);
+					dummy.render(win, i);
+					++i;
+				}
+			}
+
+			car_info.setString(sf::String("Speed: ") + std::to_string(int(top_car.forward_velocity().Length() * 20.f)) + "km/h");
+			fitness_info.setString("Gen #" + std::to_string(mutator.current_generation) + " - Fitness: " + std::to_string(top_car.fitness()) + " (CP " + std::to_string(top_car.reached_checkpoints()) + ")");
+
+			fps_info.setString(std::to_string(static_cast<unsigned short>(1.f / real_dt)) + "tps");
+			fps_info.setPosition(8.f, (0.5f * win.getSize().y) - 16.f);
+
+			//net.update();
+			//net.render(win);
+
+			win.draw(car_info);
+			win.draw(fitness_info);
+			win.draw(fps_info);
+
+			win.setView(cview);
+
+			win.display();
+		}
 	}
 
 	return 0;
@@ -195,7 +311,7 @@ int main()
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 16;
 	sf::RenderWindow win{sf::VideoMode{800, 600}, "Neural Network", sf::Style::Default, settings};
-	win.setFramerateLimit(120);
+	win.setFramerateLimit(80);
 
 	while (app(win) == 2);
 }

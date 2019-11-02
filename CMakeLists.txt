@@ -2,12 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 project(CarNN)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -fomit-frame-pointer -fstrict-aliasing")
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++14")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17 -fopenmp")
 
 link_libraries(Box2D sfml-system sfml-window sfml-graphics jsoncpp)
-
-set(CMAKE_CXX_COMPILER "clang++-4.0")
 
 aux_source_directory(. SRC_LIST)
 aux_source_directory(./entities SRC_LIST)

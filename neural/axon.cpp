@@ -4,7 +4,7 @@
 
 static const float graph_margin = 5.f,
 				   xoff = 16.f, yoff = 48.f,
-				   trace_height = 96.f,
+				   trace_height = 48.f,
 				   graph_height = trace_height + graph_margin * 2.f,
 				   graph_margout = 6.f;
 
@@ -61,7 +61,7 @@ void Axon::update(const size_t index)
 
 void Axon::render(sf::RenderTarget& target, const size_t index)
 {
-	_shape.setPosition(screen_position(target.getSize(), index)); // @TODO : don't do this when not required
+	_shape.setPosition(0.5f * screen_position(target.getSize(), index)); // @TODO : don't do this when not required
 	if (_value >= 0. && _value <= 1.)
 		_shape.setFillColor(sf::Color{0, static_cast<uint8_t>(lerp(50, 80, static_cast<float>(_value))), static_cast<uint8_t>(lerp(50, 255, static_cast<float>(_value)))});
 	else

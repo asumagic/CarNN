@@ -76,11 +76,6 @@ b2Fixture& Body::add_fixture(const b2FixtureDef fdef)
 				b2Vec2 b2dvec = polyshape.GetVertex(static_cast<int>(i));
 				cshape.setPoint(i, sf::Vector2f{b2dvec.x, b2dvec.y});
 			}
-			cshape.setFillColor(_next_color);
-			cshape.setOutlineColor(sf::Color{static_cast<uint8_t>((255.f * 0.2f) + _next_color.r),
-											 static_cast<uint8_t>((255.f * 0.2f) + _next_color.g),
-											 static_cast<uint8_t>((255.f * 0.2f) + _next_color.b)});
-			cshape.setOutlineThickness(0.08f);
 			_shapes.push_back(std::make_unique<sf::ConvexShape>(cshape)); // @TODO modify the pushed shape directly
 		} break;
 
@@ -91,12 +86,28 @@ b2Fixture& Body::add_fixture(const b2FixtureDef fdef)
 			break;
 		}
 	}
+
+	with_color(_next_color);
+
 	return *(_body->CreateFixture(&fdef));
 }
 
 Body& Body::with_color(const sf::Color c)
 {
 	_next_color = c;
+
+	for (auto& shape : _shapes)
+	{
+		shape->setFillColor(_next_color);
+		shape->setOutlineColor({
+			static_cast<uint8_t>((255.f * 0.2f) + _next_color.r),
+			static_cast<uint8_t>((255.f * 0.2f) + _next_color.g),
+			static_cast<uint8_t>((255.f * 0.2f) + _next_color.b)
+		});
+
+		shape->setOutlineThickness(0.08f);
+	}
+
 	return *this;
 }
 

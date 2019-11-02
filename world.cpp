@@ -55,6 +55,8 @@ std::vector<sf::Vertex> World::import_map(const std::string fname, Body*& wall, 
 	bdef.type = b2_staticBody;
 	wall = &add_body(bdef);
 
+	wall->set_type(BodyType::BodyWall);
+
 	std::vector<Line> eliminated;
 	sf::Vector2u image_size = map.getSize();
 	for (unsigned x = 1; x < image_size.x - 1; ++x)

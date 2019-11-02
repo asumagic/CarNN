@@ -4,7 +4,7 @@
 #include <numeric>
 #include <cmath>
 
-Neuron::Neuron() : _shape{2.}, _bias(random_double(0., 1.)) {}
+Neuron::Neuron() : _shape{2.}, _bias(random_double(-10.0, 10.0)) {}
 
 sf::Vector2f Neuron::screen_position(const sf::Vector2u window_size, const size_t index)
 {
@@ -14,9 +14,9 @@ sf::Vector2f Neuron::screen_position(const sf::Vector2u window_size, const size_
 
 void Neuron::render(sf::RenderTarget& target, const size_t index)
 {
-	_shape.setPosition(screen_position(target.getSize(), index)); // @TODO : don't do this when not required
+	_shape.setPosition(0.5f * screen_position(target.getSize(), index)); // @TODO : don't do this when not required
 	if (_sigmoid >= 0. && _sigmoid <= 1.)
-		_shape.setFillColor(sf::Color{0, static_cast<uint8_t>(lerp(50, 80, static_cast<float>(_sigmoid))), static_cast<uint8_t>(lerp(50, 255, static_cast<float>(_sigmoid)))});
+		_shape.setFillColor(sf::Color{0, static_cast<uint8_t>(lerp(40, 150, static_cast<float>(_sigmoid))), static_cast<uint8_t>(lerp(50, 255, static_cast<float>(_sigmoid)))});
 	else
 		_shape.setFillColor(sf::Color::Red);
 	target.draw(_shape);
