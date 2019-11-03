@@ -93,7 +93,7 @@ inline NeuronIdentifier Network::nth_neuron(std::size_t n, std::size_t first_lay
 
 		if (neurons_found + layer.neurons.size() > n)
 		{
-			return NeuronIdentifier{
+			return {
 				layer_identifier,
 				n - neurons_found
 			};
@@ -114,7 +114,7 @@ inline ForwardSynapseIdentifier Network::nth_synapse(std::size_t n, std::size_t 
 
 		if (synapses_found + neuron.synapses.size() > n)
 		{
-			return ForwardSynapseIdentifier{
+			return {
 				{layer_identifier, neuron_identifier},
 				n - synapses_found
 			};
