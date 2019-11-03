@@ -157,7 +157,7 @@ int app(sf::RenderWindow& win)
 
 	sf::Text car_info;
 	car_info.setFont(infofnt);
-	car_info.setColor(sf::Color::White);
+	car_info.setFillColor(sf::Color::White);
 	car_info.setCharacterSize(30);
 	car_info.setScale(0.4f, 0.4f);
 	car_info.setPosition(16.f, 16.f);
@@ -165,7 +165,7 @@ int app(sf::RenderWindow& win)
 
 	sf::Text fitness_info;
 	fitness_info.setFont(infofnt);
-	fitness_info.setColor(sf::Color::White);
+	fitness_info.setFillColor(sf::Color::White);
 	fitness_info.setCharacterSize(30);
 	fitness_info.setScale(0.4f, 0.4f);
 	fitness_info.setPosition(256.f, 16.f);
@@ -173,7 +173,7 @@ int app(sf::RenderWindow& win)
 
 	sf::Text fps_info;
 	fps_info.setFont(infofnt);
-	fps_info.setColor(sf::Color{80, 80, 80});
+	fps_info.setFillColor(sf::Color{80, 80, 80});
 	fps_info.setCharacterSize(30);
 	fps_info.setScale(0.4f, 0.4f);
 	fps_info.setStyle(sf::Text::Bold);
