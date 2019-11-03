@@ -8,22 +8,6 @@
 
 class Body;
 
-// @TODO move elsewhere
-struct Line
-{
-	Line(unsigned x1, unsigned y1, unsigned x2, unsigned y2) : p1{static_cast<float>(x1), static_cast<float>(y1)},
-															   p2{static_cast<float>(x2), static_cast<float>(y2)} {}
-
-	sf::Vector2f p1, p2;
-
-	bool operator==(const Line& other) const
-	{
-		return (p1 == other.p1 && p2 == other.p2) ||
-			   (p2 == other.p1 && p1 == other.p2);
-	}
-
-};
-
 class World
 {
 public:

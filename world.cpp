@@ -1,5 +1,6 @@
 #include "world.hpp"
 #include "maths.hpp"
+#include "line.hpp"
 
 World::World(const b2Vec2 gravity) : _gravity{gravity}, _world{gravity} {}
 
@@ -70,7 +71,8 @@ std::vector<sf::Vertex> World::import_map(const std::string fname, Body*& wall, 
 			{
 				if (xn == x && yn == y) ++xn; // skip the current pixel
 
-				Line ln{x * 5, y * 5, xn * 5, yn * 5};
+				Line ln{{x * 5.0f, y * 5.0f}, {xn * 5.0f, yn * 5.0f}};
+
 				const sf::Color pixel = map.getPixel(xn, yn);
 				if (pixel == sf::Color::White)
 				{
