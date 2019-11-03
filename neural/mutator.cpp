@@ -109,7 +109,7 @@ bool Mutator::should_mutate() const
 		return true;
 	}
 
-	return random_double() < settings.mutation_rate;
+	return random_bool(settings.mutation_rate);
 }
 
 bool Mutator::should_hard_mutate() const
@@ -119,7 +119,7 @@ bool Mutator::should_hard_mutate() const
 		throw std::runtime_error{"Hard mutation rate must be <1, otherwise the mutator would loop infinitely"};
 	}
 
-	return random_double() < settings.hard_mutation_rate;
+	return random_bool(settings.hard_mutation_rate);
 }
 
 void Mutator::create_random_neuron(Network& network)
@@ -144,7 +144,7 @@ void Mutator::create_random_neuron(Network& network)
 		ForwardSynapse& synapse = predecessor.synapses.emplace_back();
 		synapse.forward_neuron_identifier = NeuronIdentifier{layer_identifier, random_layer.neurons.size() - 1};
 		synapse.randomize_parameters();
-	} while (random_double() < settings.extra_synapse_connection_chance);
+	} while (random_bool(settings.extra_synapse_connection_chance));
 
 	// Connect this neuron to at least one neuron forward
 	do
@@ -157,7 +157,7 @@ void Mutator::create_random_neuron(Network& network)
 		ForwardSynapse& synapse = neuron.synapses.emplace_back();
 		synapse.forward_neuron_identifier = successor_identifier;
 		synapse.randomize_parameters();
-	} while (random_double() < settings.extra_synapse_connection_chance);
+	} while (random_bool(settings.extra_synapse_connection_chance));
 }
 
 void Mutator::create_random_synapse([[maybe_unused]] Network& network)
