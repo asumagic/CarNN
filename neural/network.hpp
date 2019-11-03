@@ -364,10 +364,10 @@ public:
 		} while (random_double() < extra_synapse_connection_chance);
 	}
 
-	void create_random_synapse(Network& network)
+	/*void create_random_synapse(Network& network)
 	{
 
-	}
+	}*/
 
 	void destroy_random_synapse(Network& network)
 	{
@@ -422,9 +422,9 @@ public:
 				destroy_random_synapse(network);
 				break;
 
-			case 2:
+			/*case 2:
 				create_random_synapse(network);
-				break;
+				break;*/
 			}
 		}
 	}
