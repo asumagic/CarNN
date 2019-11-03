@@ -10,6 +10,7 @@
 #include "entities/wheel.hpp"
 #include "entities/car.hpp"
 #include "neural/network.hpp"
+#include "neural/mutator.hpp"
 #include "randomutil.hpp"
 
 int app(sf::RenderWindow& win)
