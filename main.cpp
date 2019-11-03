@@ -15,7 +15,7 @@
 
 int app(sf::RenderWindow& win)
 {
-	World w{b2Vec2{0.f, 0.f}};
+	World w;
 
 	std::ifstream race_config{"race.json", std::ios::binary};
 	Json::Value root;
@@ -214,7 +214,7 @@ int app(sf::RenderWindow& win)
 			mutate();
 		}
 
-		if (!fast_simulation || ticks % 30 == 0)
+		if (!fast_simulation || ticks % 60 == 0)
 		{
 			for (sf::Event ev; win.pollEvent(ev);)
 			{

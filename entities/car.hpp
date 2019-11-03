@@ -65,6 +65,8 @@ private:
 
 	b2Vec2 _net_direction{0.0f, 0.0f};
 
+	std::size_t _raycast_updates = 0;
+
 	//double _net_feedback = 0.;
 
 	float _drift_amount = 0.0;

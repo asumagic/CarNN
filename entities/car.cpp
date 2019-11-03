@@ -234,10 +234,17 @@ void Car::transform(const b2Vec2 pos, const float angle)
 
 void Car::compute_raycasts(Body& wall_body)
 {
+	++_raycast_updates;
+
 	const size_t ray_count = _rays.size() / 2;
 	const float radius = 48.f;
 	for (size_t i = 0; i < ray_count; ++i)
 	{
+		if ((i + _raycast_updates) % 4 != 0)
+		{
+			continue;
+		}
+
 		float rad_angle = _body->GetAngle() - (static_cast<float>(i) / static_cast<float>(ray_count - 1)) * static_cast<float>(M_PI);
 
 		b2RayCastInput rin;

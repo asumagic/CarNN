@@ -61,3 +61,72 @@ void Network::dump(std::ostream& stream) const
 
 	stream << "}\n";
 }
+
+void Network::update()
+{
+	for (NeuronLayer& layer : layers)
+		for (Neuron& neuron : layer.neurons)
+		{
+			// hack lol
+			if (&layer != &layers.front())
+			{
+				neuron.compute_value();
+				neuron.partial_activation = 0.0f;
+			}
+
+			neuron.propagate_forward(*this);
+		}
+}
+
+ForwardSynapseIdentifier Network::nth_synapse(std::size_t n, std::size_t first_layer)
+{
+	std::size_t synapses_found = 0;
+
+	for (std::size_t layer_identifier = first_layer;; ++layer_identifier)
+		for (std::size_t neuron_identifier = 0; neuron_identifier < layers[layer_identifier].neurons.size(); ++neuron_identifier)
+		{
+			const Neuron& neuron = layers.at(layer_identifier).neurons.at(neuron_identifier);
+
+			if (synapses_found + neuron.synapses.size() > n)
+			{
+				return {
+					{layer_identifier, neuron_identifier},
+					n - synapses_found
+				};
+			}
+
+			synapses_found += neuron.synapses.size();
+		}
+}
+
+NeuronIdentifier Network::nth_neuron(std::size_t n, std::size_t first_layer)
+{
+	std::size_t neurons_found = 0;
+
+	for (std::size_t layer_identifier = first_layer;; ++layer_identifier)
+	{
+		const NeuronLayer& layer = layers.at(layer_identifier);
+
+		if (neurons_found + layer.neurons.size() > n)
+		{
+			return {
+				layer_identifier,
+						n - neurons_found
+			};
+		}
+
+		neurons_found += layer.neurons.size();
+	}
+}
+
+std::size_t Network::neuron_count(std::size_t first_layer, std::size_t last_layer) const
+{
+	std::size_t sum = 0;
+
+	for (std::size_t i = first_layer; i <= last_layer; ++i)
+	{
+		sum += layers[i].neurons.size();
+	}
+
+	return sum;
+}
