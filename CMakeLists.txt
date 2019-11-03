@@ -5,7 +5,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG")
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17 -fopenmp")
 
-link_libraries(Box2D sfml-system sfml-window sfml-graphics jsoncpp)
+link_libraries(Box2D sfml-system sfml-window sfml-graphics jsoncpp fmt)
 
 aux_source_directory(. SRC_LIST)
 aux_source_directory(./entities SRC_LIST)
