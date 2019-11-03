@@ -264,9 +264,6 @@ int app(sf::RenderWindow& win)
 			fps_info.setString(std::to_string(static_cast<unsigned short>(1.f / real_dt)) + "tps");
 			fps_info.setPosition(8.f, (0.5f * win.getSize().y) - 16.f);
 
-			//net.update();
-			//net.render(win);
-
 			win.draw(car_info);
 			win.draw(fitness_info);
 			win.draw(fps_info);
