@@ -17,8 +17,8 @@ int app(sf::RenderWindow& win)
 
 	std::ifstream race_config{"race.json", std::ios::binary};
 	Json::Value root;
-	Json::Reader reader;
-	reader.parse(race_config, root, false);
+	Json::CharReaderBuilder reader;
+	Json::parseFromStream(reader, race_config, &root, nullptr);
 
 	Body* wall_body;
 	b2Vec2 car_pos;
