@@ -133,10 +133,7 @@ Network::Network(std::size_t input_count, std::size_t output_count, std::size_t 
 
 void Network::dump(std::ostream& stream) const
 {
-	stream <<
-R"(=========== GRAPHVIZ BEGIN
-digraph G {
-)";
+	stream << "digraph G {\n";
 
 	for (std::size_t layer_identifier = 0; layer_identifier < layers.size(); ++layer_identifier)
 	for (std::size_t neuron_identifier = 0; neuron_identifier < layers[layer_identifier].neurons.size(); ++neuron_identifier)
@@ -161,8 +158,5 @@ digraph G {
 		}
 	}
 
-	stream <<
-R"(}
-=========== GRAPHVIZ END
-)";
+	stream << "}\n";
 }
