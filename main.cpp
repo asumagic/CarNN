@@ -1,5 +1,6 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
+#include <fmt/core.h>
 #include <iostream>
 #include <fstream>
 #include <json/value.h>
@@ -163,14 +164,6 @@ int app(sf::RenderWindow& win)
 	car_info.setPosition(16.f, 16.f);
 	car_info.setStyle(sf::Text::Bold);
 
-	sf::Text fitness_info;
-	fitness_info.setFont(infofnt);
-	fitness_info.setFillColor(sf::Color::White);
-	fitness_info.setCharacterSize(30);
-	fitness_info.setScale(0.4f, 0.4f);
-	fitness_info.setPosition(256.f, 16.f);
-	fitness_info.setStyle(sf::Text::Bold);
-
 	sf::Text fps_info;
 	fps_info.setFont(infofnt);
 	fps_info.setFillColor(sf::Color{80, 80, 80});
@@ -258,14 +251,23 @@ int app(sf::RenderWindow& win)
 			float ui_scale = 0.5f;
 			win.setView(sf::View{sf::FloatRect{0.f, 0.f, static_cast<float>(win.getSize().x) * ui_scale, static_cast<float>(win.getSize().y) * ui_scale}});
 
-			car_info.setString(sf::String("Speed: ") + std::to_string(int(top_car.forward_velocity().Length() * 20.f)) + "km/h");
-			fitness_info.setString("Gen #" + std::to_string(mutator.current_generation) + " - Fitness: " + std::to_string(top_car.fitness()) + " (CP " + std::to_string(top_car.reached_checkpoints()) + ")");
+			car_info.setString(fmt::format(
+				"Generation #{}\n"
+				"Speed: {:.1f}km/h\n"
+				"Fitness: {:.0f}",
+				mutator.current_generation,
+				top_car.forward_velocity().Length() * 20.0f,
+				top_car.fitness()
+			));
 
-			fps_info.setString(std::to_string(static_cast<unsigned short>(1.f / real_dt)) + "tps");
+			fps_info.setString(fmt::format(
+				"{:.1f}ups",
+				1.0f / real_dt
+			));
+
 			fps_info.setPosition(8.f, (0.5f * win.getSize().y) - 16.f);
 
 			win.draw(car_info);
-			win.draw(fitness_info);
 			win.draw(fps_info);
 
 			win.setView(cview);
