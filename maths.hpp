@@ -1,10 +1,14 @@
-#ifndef MATHS_HPP
-#define MATHS_HPP
+#pragma once
+#include <cmath>
 
-template <typename T>
-T lerp(T a, T b, float t)
+template<class T, class U>
+T lerp(T a, T b, U t)
 {
 	return (1.f - t) * a + (t * b);
 }
 
-#endif // MATHS_HPP
+template<class T>
+inline T sigmoid(T v)
+{
+	return 1.0 / (1.0 + std::exp(-v));
+}
