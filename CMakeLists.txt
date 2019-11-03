@@ -7,8 +7,16 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17 -fopenmp")
 
 link_libraries(Box2D sfml-system sfml-window sfml-graphics jsoncpp fmt)
 
-aux_source_directory(. SRC_LIST)
-aux_source_directory(./entities SRC_LIST)
-aux_source_directory(./neural SRC_LIST)
-
-add_executable(${PROJECT_NAME} ${SRC_LIST})
+add_executable(${PROJECT_NAME}
+	entities/car.cpp
+	entities/checkpoint.cpp
+	entities/wheel.cpp
+	neural/forwardsynapse.cpp
+	neural/mutator.cpp
+	neural/network.cpp
+	neural/neuron.cpp
+	body.cpp
+	main.cpp
+	randomutil.cpp
+	world.cpp
+)
