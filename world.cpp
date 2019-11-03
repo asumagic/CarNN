@@ -50,28 +50,35 @@ std::vector<sf::Vertex> World::import_map(const std::string fname, Body*& wall, 
 
 	sf::Image map;
 	if (!map.loadFromFile(fname))
+	{
 		return ret;
+	}
 
 	b2BodyDef bdef;
 	bdef.type = b2_staticBody;
 	wall = &add_body(bdef);
-
 	wall->set_type(BodyType::BodyWall);
 
 	std::vector<Line> eliminated;
 	sf::Vector2u image_size = map.getSize();
-	for (unsigned x = 1; x < image_size.x - 1; ++x)
 	for (unsigned y = 1; y < image_size.y - 1; ++y)
+	for (unsigned x = 1; x < image_size.x - 1; ++x)
 	{
 		const sf::Color main_pixel = map.getPixel(x, y);
 		if (main_pixel == sf::Color::White)
 		{
-			for (unsigned xn = x - 1; xn < x + 2; ++xn)
 			for (unsigned yn = y - 1; yn < y + 2; ++yn)
+			for (unsigned xn = x - 1; xn < x + 2; ++xn)
 			{
-				if (xn == x && yn == y) ++xn; // skip the current pixel
+				if (xn == x && yn == y)
+				{
+					continue;
+				}
 
-				Line ln{{x * 5.0f, y * 5.0f}, {xn * 5.0f, yn * 5.0f}};
+				Line ln {
+					{x * world_scale, y * world_scale},
+					{xn * world_scale, yn * world_scale}
+				};
 
 				const sf::Color pixel = map.getPixel(xn, yn);
 				if (pixel == sf::Color::White)
@@ -79,20 +86,15 @@ std::vector<sf::Vertex> World::import_map(const std::string fname, Body*& wall, 
 					if (std::find(begin(eliminated), end(eliminated), ln) == end(eliminated))
 					{
 						b2EdgeShape wall_shape;
-						wall_shape.Set(b2Vec2{static_cast<float>(ln.p1.x), static_cast<float>(ln.p1.y)}, b2Vec2{static_cast<float>(ln.p2.x), static_cast<float>(ln.p2.y)});
+						wall_shape.Set({ln.p1.x, ln.p1.y}, {ln.p2.x, ln.p2.y});
 
 						b2FixtureDef fixdef;
 						fixdef.shape = &wall_shape;
 
 						wall->add_fixture(fixdef);
 
-						sf::Vertex v1{ln.p1};
-						v1.color = sf::Color::White;
-						ret.push_back(v1);
-
-						sf::Vertex v2{ln.p2};
-						v2.color = sf::Color::White;
-						ret.push_back(v2);
+						ret.emplace_back(ln.p1, sf::Color::White);
+						ret.emplace_back(ln.p2, sf::Color::White);
 
 						eliminated.push_back(ln);
 					}
@@ -101,8 +103,7 @@ std::vector<sf::Vertex> World::import_map(const std::string fname, Body*& wall, 
 		}
 		else if (main_pixel.b == 255)
 		{
-			//std::vector<int>(5000000000000000);
-			car_origin = b2Vec2{x * 5.f, y * 5.f};
+			car_origin = {x * world_scale, y * world_scale};
 		}
 	}
 

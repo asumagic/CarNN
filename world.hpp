@@ -11,6 +11,8 @@ class Body;
 class World
 {
 public:
+	static constexpr float world_scale = 5.0f;
+
 	World(const b2Vec2 gravity = b2Vec2{0, 0});
 
 	World& step(const float speed, const int vel_it, const int pos_it);
