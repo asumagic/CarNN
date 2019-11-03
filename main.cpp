@@ -89,10 +89,10 @@ int app(sf::RenderWindow& win)
 	fixdef.restitution = 0.2f;
 	fixdef.filter.groupIndex = -1;
 
-	proper::Mutator mutator;
+	Mutator mutator;
 
 	std::vector<Car*> cars;
-	std::vector<proper::Network> networks;
+	std::vector<Network> networks;
 
 	float total_time = 0.0f;
 
@@ -111,7 +111,7 @@ int app(sf::RenderWindow& win)
 	};
 
 	const auto mutate = [&] {
-		std::vector<proper::NetworkResult> results;
+		std::vector<NetworkResult> results;
 
 		for (std::size_t i = 0; i < cars.size(); ++i)
 		{
@@ -151,18 +151,6 @@ int app(sf::RenderWindow& win)
 	sf::Font infofnt;
 	if (!infofnt.loadFromFile("Cantarell-Bold.ttf"))
 		std::cerr << "WARNING: Failed to load font." << std::endl;
-
-	const std::array<const std::string, 5> labels {{ "Fwd", "Bck", "Left", "Right", "Drift" }};
-
-	std::vector<Axon> axons;
-
-	if (axons.empty())
-	{
-		for (std::size_t i = 0; i < labels.size(); ++i)
-		{
-			Axon& axon = axons.emplace_back(i);
-		}
-	}
 
 	bool fast_simulation = false;
 	std::size_t ticks = 0;
@@ -204,7 +192,7 @@ int app(sf::RenderWindow& win)
 		for (std::size_t i = 0; i < cars.size(); ++i)
 		{
 			Car& c = *cars[i];
-			proper::Network& net = networks[i];
+			Network& net = networks[i];
 
 			c.set_target_checkpoint(c.reached_checkpoints() == checkpoints.size() ? nullptr : checkpoints[c.reached_checkpoints()]);
 
@@ -269,19 +257,6 @@ int app(sf::RenderWindow& win)
 			sf::View cview{win.getView()};
 			float ui_scale = 0.5f;
 			win.setView(sf::View{sf::FloatRect{0.f, 0.f, static_cast<float>(win.getSize().x) * ui_scale, static_cast<float>(win.getSize().y) * ui_scale}});
-
-			{
-				std::size_t i = 0;
-				for (auto& dummy : axons)
-				{
-					dummy.set_font(&infofnt);
-					dummy.set_label(labels[i]);
-					dummy.update(i);
-					dummy.write(networks[std::distance(cars.begin(), top_car_it)].outputs().neurons[i].value);
-					dummy.render(win, i);
-					++i;
-				}
-			}
 
 			car_info.setString(sf::String("Speed: ") + std::to_string(int(top_car.forward_velocity().Length() * 20.f)) + "km/h");
 			fitness_info.setString("Gen #" + std::to_string(mutator.current_generation) + " - Fitness: " + std::to_string(top_car.fitness()) + " (CP " + std::to_string(top_car.reached_checkpoints()) + ")");

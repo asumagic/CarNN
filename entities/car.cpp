@@ -271,7 +271,7 @@ void Car::compute_raycasts(Body& wall_body)
 	}
 }
 
-void Car::update_inputs(proper::Network &n)
+void Car::update_inputs(Network &n)
 {
 	auto& inputs = n.inputs();
 

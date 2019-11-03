@@ -2,87 +2,17 @@
 
 #include "../entities/car.hpp"
 
-Network::Network(size_t outputs, size_t synapses)
-{
-	_synapses.reserve(synapses);
-	_axons.reserve(outputs);
-
-	for (size_t i = 0; i < outputs; ++i)
-		_axons.emplace_back(i);
-
-	_neuron_layers.emplace_back(_axons.size());
-
-	for (Axon& axon : _axons)
-	for (Neuron& neuron : _neuron_layers.back())
-	{
-		axon.tie_neuron(neuron);
-	}
-}
-
-Network& Network::update()
-{
-	for (auto& layer : _neuron_layers)
-	for (Neuron& neuron : layer)
-		neuron.update();
-
-	for (size_t i = 0; i < _axons.size(); ++i)
-		_axons[i].update(i);
-
-	return *this;
-}
-
-std::vector<double> Network::results()
-{
-	std::vector<double> results;
-
-	results.reserve(_axons.size());
-
-	for (Axon& axon : _axons)
-		results.push_back(axon.read());
-
-	return results;
-}
-
-Synapse& Network::add_synapse(double& input)
-{
-	_synapses.emplace_back(input);
-	Synapse& syn = _synapses.back();
-
-	for (Neuron& neuron : _neuron_layers.front())
-		neuron.add_synapse(syn);
-
-	return syn;
-}
-
-void Network::render(sf::RenderTarget& target)
-{
-	for (size_t i = 0; i < _synapses.size(); ++i)
-		_synapses[i].render(target, i);
-
-	{
-		std::size_t i = 0;
-		for (auto& layer : _neuron_layers)
-		for (auto& neuron : layer)
-		{
-			neuron.render(target, ++i);
-		}
-	}
-
-	for (size_t i = 0; i < _axons.size(); ++i)
-		_axons[i].render(target, i);
-}
-
-bool proper::NetworkResult::operator<(const proper::NetworkResult& other) const
+bool NetworkResult::operator<(const NetworkResult& other) const
 {
 	return car->fitness() < other.car->fitness();
 }
 
-bool proper::NetworkResult::operator>(const proper::NetworkResult& other) const
+bool NetworkResult::operator>(const NetworkResult& other) const
 {
 	return car->fitness() > other.car->fitness();
 }
 
-proper::Network proper::Mutator::cross(const proper::Network& a, const proper::Network& b)
+Network Mutator::cross(const Network& a, const Network& b)
 {
 	assert(a.layers.size() == b.layers.size());
 	assert(a.layers.front().size() == b.layers.front().size());
@@ -141,7 +71,7 @@ proper::Network proper::Mutator::cross(const proper::Network& a, const proper::N
 	return ret;
 }
 
-void proper::Mutator::darwin(std::vector<proper::NetworkResult> results)
+void Mutator::darwin(std::vector<NetworkResult> results)
 {
 	float new_max_fitness = std::max_element(results.begin(), results.end())->car->fitness();
 
@@ -169,6 +99,4 @@ void proper::Mutator::darwin(std::vector<proper::NetworkResult> results)
 
 		mutate(*results[i].network);
 	}
-
-	results[0].network->dump();
 }

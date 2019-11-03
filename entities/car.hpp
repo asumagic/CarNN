@@ -54,7 +54,7 @@ public:
 
 	void compute_raycasts(Body& wall_body);
 
-	void update_inputs(proper::Network& n);
+	void update_inputs(Network& n);
 
 private:
 	std::array<sf::Vertex, total_rays * 2> _rays{};

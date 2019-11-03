@@ -5,36 +5,10 @@
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
-#include "neuron.hpp"
-#include "synapse.hpp"
-#include "axon.hpp"
+#include <vector>
 #include "../randomutil.hpp"
 
 class Car;
-
-class Network
-{
-public:
-	Network(size_t outputs, size_t synapses);
-
-	Network& update();
-	std::vector<double> results();
-
-	inline std::vector<Synapse>& synapses() { return _synapses; }
-	inline std::vector<Axon>&    axons()    { return _axons;    }
-
-	Synapse& add_synapse(double& input); // UB if add_synapse is called more times than the total synapses count (c.f. 3rd argument)
-
-	void render(sf::RenderTarget& target);
-
-private:
-	std::vector<Synapse> _synapses;
-	std::vector<std::vector<Neuron>> _neuron_layers;
-	std::vector<Axon> _axons;
-};
-
-namespace proper
-{
 
 template<class T>
 inline T sigmoid(T v)
@@ -455,7 +429,5 @@ public:
 		}
 	}
 };
-
-}
 
 #endif // NETWORK_HPP
