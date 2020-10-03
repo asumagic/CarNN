@@ -1,8 +1,8 @@
 #ifndef BODY_HPP
 #define BODY_HPP
 
-#include <Box2D/Box2D.h>
 #include "world.hpp"
+#include <box2d/box2d.h>
 
 class World;
 class Body;
@@ -18,18 +18,18 @@ enum class BodyType
 
 struct BodyUserData
 {
-	Body* body;
+	Body*    body;
 	BodyType type = BodyType::BodyAny;
 };
 
 class Body
 {
-public:
+	public:
 	Body(World& world, const b2BodyDef bdef, const bool do_render = true);
 	virtual ~Body() {}
 
 	// Delete move and copy constructors
-	Body(const Body&) = delete;
+	Body(const Body&)  = delete;
 	Body(const Body&&) = delete;
 
 	virtual void update();
@@ -37,8 +37,8 @@ public:
 
 	void set_type(const BodyType type);
 
-	b2Vec2 front_normal();
-	b2Vec2 lateral_normal();
+	b2Vec2 front_normal() const;
+	b2Vec2 lateral_normal() const;
 
 	b2Vec2 forward_velocity();
 	b2Vec2 lateral_velocity();
@@ -47,20 +47,20 @@ public:
 
 	Body& with_color(const sf::Color c);
 
-	b2Body& get();
+	b2Body&    get();
 	b2BodyDef& definition();
 
-protected:
+	protected:
 	bool _do_render;
 
 	std::vector<std::unique_ptr<sf::Shape>> _shapes;
-	sf::Color _next_color;
+	sf::Color                               _next_color;
 
 	BodyUserData _bud;
 
 	b2BodyDef _bdef;
-	b2Body* _body;
-	World& _world;
+	b2Body*   _body;
+	World&    _world;
 };
 
 #endif // BODY_HPP

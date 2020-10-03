@@ -1,5 +1,6 @@
 #pragma once
 
+double random_double_normal();
 double random_double(double min, double max);
 double random_double();
 double random_gauss_double(double mean, double stddev);

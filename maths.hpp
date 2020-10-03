@@ -1,14 +1,15 @@
 #pragma once
 #include <cmath>
 
-template<class T, class U>
-T lerp(T a, T b, U t)
+template<class T>
+T clamp(T x, T lower, T upper)
 {
-	return (1.f - t) * a + (t * b);
+	return std::min(upper, std::max(lower, x));
 }
 
 template<class T>
-inline T sigmoid(T v)
+T lerp(T a, T b, float t)
 {
-	return 1.0 / (1.0 + std::exp(-v));
+	t = clamp(t, 0.0f, 1.0f);
+	return (1.f - t) * a + (t * b);
 }

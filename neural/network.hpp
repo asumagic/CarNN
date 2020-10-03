@@ -1,15 +1,16 @@
 #pragma once
 
-#include <cassert>
-#include <cstdlib>
-#include <cmath>
-#include <vector>
-#include <iostream>
-#include "../randomutil.hpp"
 #include "../maths.hpp"
+#include "../randomutil.hpp"
+#include <array>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <vector>
 
-#include "neuron.hpp"
 #include "forwardsynapseidentifier.hpp"
+#include "neuron.hpp"
 
 class Car;
 
@@ -23,8 +24,8 @@ struct NeuronLayer
 
 class Network
 {
-public:
-	Network(std::size_t input_count, std::size_t output_count, std::size_t max_layers);
+	public:
+	Network(std::size_t input_count, std::size_t output_count);
 
 	void dump(std::ostream& stream = std::cout) const;
 
@@ -34,32 +35,32 @@ public:
 	NeuronIdentifier insert_random_neuron();
 	NeuronIdentifier erase_random_neuron();
 
-	std::size_t neuron_count(std::size_t first_layer, std::size_t last_layer) const;
-
-	Neuron& neuron(NeuronIdentifier identifier);
+	Neuron&         neuron(NeuronIdentifier identifier);
 	ForwardSynapse& synapse(ForwardSynapseIdentifier identifier);
 
-	NeuronIdentifier nth_neuron(std::size_t n, std::size_t first_layer = 0);
+	NeuronIdentifier         nth_neuron(std::size_t n, std::size_t first_layer = 0);
 	ForwardSynapseIdentifier nth_synapse(std::size_t n, std::size_t first_layer = 0);
 
-	std::vector<NeuronLayer> layers;
+	std::size_t      neuron_count(std::size_t first_layer, std::size_t last_layer);
+	NeuronIdentifier random_neuron(std::size_t first_layer, std::size_t last_layer);
+
+	std::size_t              synapse_count(std::size_t first_layer, std::size_t last_layer);
+	ForwardSynapseIdentifier random_synapse(std::size_t first_layer, std::size_t last_layer);
+
+	std::array<NeuronLayer, 3> layers{};
 
 	void update();
 
-private:
+	void reset_values();
+
+	private:
 	void sanitize(NeuronIdentifier identifier);
 	void sanitize(ForwardSynapseIdentifier identifier);
 };
 
-inline NeuronLayer& Network::inputs()
-{
-	return layers.front();
-}
+inline NeuronLayer& Network::inputs() { return layers.front(); }
 
-inline NeuronLayer& Network::outputs()
-{
-	return layers.back();
-}
+inline NeuronLayer& Network::outputs() { return layers.back(); }
 
 inline Neuron& Network::neuron(NeuronIdentifier identifier)
 {

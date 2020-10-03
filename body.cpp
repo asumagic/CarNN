@@ -39,12 +39,12 @@ void Body::set_type(const BodyType type)
 	_bud.type = type;
 }
 
-b2Vec2 Body::front_normal()
+b2Vec2 Body::front_normal() const
 {
 	return _body->GetWorldVector(b2Vec2{0.f, 1.f});
 }
 
-b2Vec2 Body::lateral_normal()
+b2Vec2 Body::lateral_normal() const
 {
 	return _body->GetWorldVector(b2Vec2{1.f, 0.f});
 }
@@ -70,10 +70,10 @@ b2Fixture& Body::add_fixture(const b2FixtureDef fdef)
 		{
 		case b2Shape::e_polygon: {
 			const b2PolygonShape& polyshape = *dynamic_cast<const b2PolygonShape*>(&shape);
-			sf::ConvexShape cshape{static_cast<size_t>(polyshape.GetVertexCount())};
+			sf::ConvexShape cshape{static_cast<size_t>(polyshape.m_count)};
 			for (size_t i = 0; i < cshape.getPointCount(); ++i)
 			{
-				b2Vec2 b2dvec = polyshape.GetVertex(static_cast<int>(i));
+				b2Vec2 b2dvec = polyshape.m_vertices[static_cast<int>(i)];
 				cshape.setPoint(i, sf::Vector2f{b2dvec.x, b2dvec.y});
 			}
 			_shapes.push_back(std::make_unique<sf::ConvexShape>(cshape)); // @TODO modify the pushed shape directly

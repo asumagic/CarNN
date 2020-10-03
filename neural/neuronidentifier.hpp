@@ -11,9 +11,7 @@ struct NeuronIdentifier
 
 	NeuronIdentifier() = default;
 
-	explicit NeuronIdentifier(std::size_t value) :
-	    value{value}
-	{}
+	explicit NeuronIdentifier(std::size_t value) : value{value} {}
 
 	NeuronIdentifier(std::size_t layer, std::size_t neuron_in_layer) :
 	    value{layer * max_neurons_per_layer + neuron_in_layer}
@@ -21,13 +19,13 @@ struct NeuronIdentifier
 		assert(neuron_in_layer < max_neurons_per_layer);
 	}
 
-	std::size_t layer() const
-	{
-		return value / max_neurons_per_layer;
-	}
+	std::size_t layer() const { return value / max_neurons_per_layer; }
 
-	std::size_t neuron_in_layer() const
-	{
-		return value % max_neurons_per_layer;
-	}
+	std::size_t neuron_in_layer() const { return value % max_neurons_per_layer; }
+
+	friend bool operator<(const NeuronIdentifier& a, const NeuronIdentifier& b);
+	friend bool operator==(const NeuronIdentifier& a, const NeuronIdentifier& b);
 };
+
+inline bool operator<(const NeuronIdentifier& a, const NeuronIdentifier& b) { return a.value < b.value; }
+inline bool operator==(const NeuronIdentifier& a, const NeuronIdentifier& b) { return a.value == b.value; }

@@ -1,16 +1,17 @@
 #ifndef WORLD_HPP
 #define WORLD_HPP
 
-#include <Box2D/Box2D.h>
 #include <SFML/Graphics.hpp>
+#include <box2d/box2d.h>
 #include <vector>
+
 #include "body.hpp"
 
 class Body;
 
 class World
 {
-public:
+	public:
 	static constexpr float world_scale = 5.0f;
 
 	World(const b2Vec2 gravity = b2Vec2{0, 0});
@@ -19,7 +20,7 @@ public:
 	World& update();
 	World& render(sf::RenderTarget& target);
 
-	void set_dt(const float dt);
+	void  set_dt(const float dt);
 	float dt() const;
 
 	void update_view(sf::RenderTarget& target, sf::Vector2f origin, float czoom);
@@ -37,12 +38,12 @@ public:
 
 	b2World& get();
 
-private:
+	private:
 	std::vector<std::unique_ptr<Body>> _bodies;
 
 	float _dt = 0.f;
 
-	b2Vec2 _gravity;
+	b2Vec2  _gravity;
 	b2World _world;
 };
 
