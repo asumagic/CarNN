@@ -1,5 +1,6 @@
 #include "wheel.hpp"
 
+#include "../maths.hpp"
 #include "../world.hpp"
 
 Wheel::Wheel(World& world, const b2BodyDef bdef, const bool do_render) : Body(world, bdef, do_render)
@@ -18,25 +19,23 @@ void Wheel::cancel_lateral_force(const float multiplier)
 	_body->ApplyAngularImpulse(_impulse_magnitude * _body->GetInertia() * -_body->GetAngularVelocity(), false);
 }
 
-void Wheel::drag()
+void Wheel::drag(float brake_intensity)
 {
 	b2Vec2 fvel   = forward_velocity();
 	float  fspeed = fvel.Normalize();
-	float  drag   = _drag * fspeed;
+	float  drag   = lerp(_drag, _brake_drag, brake_intensity) * fspeed;
 	_body->ApplyForce(drag * fvel, _body->GetWorldCenter(), false);
 }
 
-void Wheel::accelerate(float by)
+void Wheel::accelerate(float throttle)
 {
-	float desired_speed = (by > 0.f ? _forward_speed : _backwards_speed);
-
 	b2Vec2 current_fnormal = front_normal();
 
 	float final_force;
-	if (desired_speed > 0)
-		final_force = _max_accel_force * _backwards_mul * std::abs(by);
-	else if (desired_speed < 0)
-		final_force = -_max_accel_force * _forward_mul * std::abs(by);
+	if (throttle > 0)
+		final_force = _max_accel_force * _backwards_mul * std::abs(throttle);
+	else if (throttle < 0)
+		final_force = -_max_accel_force * _forward_mul * std::abs(throttle);
 	else
 		return;
 

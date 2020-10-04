@@ -14,6 +14,7 @@ enum AxonControl : size_t
 {
 	Axon_Forward,
 	Axon_Backwards,
+	Axon_Brake,
 	Axon_Steer_Left,
 	Axon_Steer_Right,
 	Axon_Drift,
@@ -45,11 +46,12 @@ class Car : public Body
 	float fitness() const;
 	void  fitness_penalty(float value);
 
-	void cut_engines();
+	void wall_collision();
 
 	void accelerate(float by);
-	void apply_torque(float by);
+	void steer(float towards);
 	void set_drift(const float drift_amount);
+	void brake(float by);
 
 	void transform(const b2Vec2 pos, const float angle);
 
@@ -62,11 +64,12 @@ class Car : public Body
 	std::vector<Wheel*>                    _wheels;
 	std::array<b2RevoluteJoint*, 2>        _front_joints{};
 
-	std::array<double, total_rays> _net_inputs{};
-
-	std::size_t _raycast_updates = 0;
+	std::array<double, total_rays> _ray_distances{};
+	std::size_t                    _ray_update_frequency = 0;
 
 	float _drift_amount = 0.0;
+
+	float _brake_amount = 0.0f;
 
 	mutable float _fitness      = 0.0f;
 	float         _fitness_bias = 0.0f;

@@ -29,9 +29,6 @@ class Network
 	Layer& inputs();
 	Layer& outputs();
 
-	NeuronId insert_random_neuron();
-	NeuronId erase_random_neuron();
-
 	Neuron&  neuron(NeuronId identifier);
 	Synapse& synapse(SynapseId identifier);
 

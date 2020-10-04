@@ -18,9 +18,9 @@ void CarCheckpointListener::BeginContact(b2Contact* contact)
 		static_cast<Car*>(bodyB_BUD.body)->contact_checkpoint(*static_cast<Checkpoint*>(bodyA_BUD.body));
 
 	if (bodyA_BUD.type == BodyType::BodyCar && bodyB_BUD.type == BodyType::BodyWall)
-		static_cast<Car*>(bodyA_BUD.body)->cut_engines();
+		static_cast<Car*>(bodyA_BUD.body)->wall_collision();
 	else if (bodyB_BUD.type == BodyType::BodyCar && bodyA_BUD.type == BodyType::BodyWall)
-		static_cast<Car*>(bodyB_BUD.body)->cut_engines();
+		static_cast<Car*>(bodyB_BUD.body)->wall_collision();
 }
 
 void CarCheckpointListener::EndContact(b2Contact*) {}
@@ -105,7 +105,7 @@ void Car::update()
 	for (Wheel* wheel : _wheels)
 	{
 		wheel->cancel_lateral_force(lerp(1.f, 0.5f, _drift_amount));
-		wheel->drag();
+		wheel->drag(_brake_amount);
 		wheel->update();
 	}
 
@@ -189,23 +189,21 @@ float Car::fitness() const
 
 void Car::fitness_penalty(float value) { _fitness_bias -= value; }
 
-void Car::cut_engines() { _acceleration_factor = 0.0f; }
+void Car::wall_collision() { _acceleration_factor = 0.0f; }
 
 void Car::accelerate(float by)
 {
-	by *= _acceleration_factor * 2.0f;
+	by *= _acceleration_factor;
 
-	for (size_t i = 0; i < 2; ++i)
-		_wheels[i]->accelerate(1.1f * by);
 	for (size_t i = 2; i < 4; ++i)
-		_wheels[i]->accelerate(0.7f * by);
+		_wheels[i]->accelerate(by);
 }
 
-void Car::apply_torque(float by)
+void Car::steer(float towards)
 {
 	for (size_t i = 0; i < 2; ++i)
 	{
-		float desired_angle = lerp(-_angle_lock, _angle_lock, by * 0.5 + 0.5);
+		float desired_angle = lerp(-_angle_lock, _angle_lock, towards * 0.5 + 0.5);
 
 		float fspeed      = _turn_speed * _world.dt();
 		float cangle      = _front_joints[i]->GetJointAngle();
@@ -218,6 +216,8 @@ void Car::apply_torque(float by)
 
 void Car::set_drift(const float drift_amount) { _drift_amount = drift_amount; }
 
+void Car::brake(float by) { _brake_amount = by; }
+
 void Car::transform(const b2Vec2 pos, const float angle)
 {
 	_body->SetTransform(pos, angle);
@@ -227,13 +227,13 @@ void Car::transform(const b2Vec2 pos, const float angle)
 
 void Car::compute_raycasts(Body& wall_body)
 {
-	++_raycast_updates;
+	++_ray_update_frequency;
 
 	const size_t ray_count = _rays.size() / 2;
-	const float  radius    = 96.f;
+	const float  radius    = 64.f;
 	for (size_t i = 0; i < ray_count; ++i)
 	{
-		if ((i + _raycast_updates) % 4 != 0)
+		if ((i + _ray_update_frequency) % 4 != 0)
 		{
 			continue;
 		}
@@ -271,7 +271,7 @@ void Car::compute_raycasts(Body& wall_body)
 		v2.color           = col;
 		_rays[(i * 2) + 1] = v2;
 
-		_net_inputs[i] = static_cast<double>(1.f - closest_frac);
+		_ray_distances[i] = static_cast<double>(1.f - closest_frac);
 	}
 }
 
@@ -279,7 +279,7 @@ void Car::update_inputs(Network& n)
 {
 	auto& inputs = n.inputs();
 
-	assert(inputs.neurons.size() == _net_inputs.size() + 4);
+	assert(inputs.neurons.size() == _ray_distances.size() + 4);
 
 	std::size_t i = 0;
 
@@ -291,8 +291,8 @@ void Car::update_inputs(Network& n)
 	inputs.neurons[i++].value = lerp(0, 1, forward_velocity().Length() / 4.0f);
 	inputs.neurons[i++].value = lerp(0, 1, lateral_velocity().Length() / 4.0f);
 
-	for (std::size_t j = 0; j < _net_inputs.size(); ++j, ++i)
+	for (std::size_t j = 0; j < _ray_distances.size(); ++j, ++i)
 	{
-		inputs.neurons[i].value = _net_inputs[j];
+		inputs.neurons[i].value = _ray_distances[j];
 	}
 }

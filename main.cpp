@@ -144,7 +144,7 @@ int app(sf::RenderWindow& win)
 		car.with_color(sf::Color{200, 50, 0, 50}).add_fixture(fixdef);
 		car.transform(car_pos, static_cast<float>(0.5 * M_PI));
 
-		auto& last_network = networks.emplace_back(total_rays + 4, 5);
+		auto& last_network = networks.emplace_back(total_rays + 4, 6);
 		mutator.randomize(last_network);
 	}
 
@@ -206,11 +206,11 @@ int app(sf::RenderWindow& win)
 			const auto& results = net.outputs();
 
 			c.set_drift(static_cast<float>(results.neurons[Axon_Drift].value));
-			c.apply_torque(
+			c.steer(
 				static_cast<float>(results.neurons[Axon_Steer_Right].value - results.neurons[Axon_Steer_Left].value));
 			c.accelerate(
 				static_cast<float>(results.neurons[Axon_Forward].value - results.neurons[Axon_Backwards].value));
-			// c.feedback(static_cast<float>(results.neurons[Axon_Feedback].value));
+			c.brake(results.neurons[Axon_Brake].value);
 
 			c.compute_raycasts(*wall_body);
 		}
