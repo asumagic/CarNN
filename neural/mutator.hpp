@@ -20,16 +20,16 @@ struct NetworkResult
 struct MutatorSettings
 {
 	double bias_initial_std_dev      = 0.05;
-	double bias_mutation_factor      = 0.05;
+	double bias_mutation_factor      = 0.07;
 	double bias_mutation_chance      = 0.7;
 	double bias_hard_mutation_factor = 0.2;
-	double bias_hard_mutation_chance = 0.6;
+	double bias_hard_mutation_chance = 0.2;
 
 	double weight_initial_std_dev      = 0.05;
-	double weight_mutation_factor      = 0.05;
+	double weight_mutation_factor      = 0.07;
 	double weight_mutation_chance      = 0.7;
 	double weight_hard_mutation_factor = 0.2;
-	double weight_hard_mutation_chance = 0.6;
+	double weight_hard_mutation_chance = 0.2;
 
 	double extra_synapse_connection_chance = 0.5;
 
