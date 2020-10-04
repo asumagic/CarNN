@@ -1,16 +1,13 @@
 #pragma once
 
 #include "../maths.hpp"
-#include "../randomutil.hpp"
+#include "forwardsynapseidentifier.hpp"
+#include "neuron.hpp"
 #include <array>
 #include <cassert>
 #include <cmath>
-#include <cstdlib>
-#include <iostream>
+#include <iosfwd>
 #include <vector>
-
-#include "forwardsynapseidentifier.hpp"
-#include "neuron.hpp"
 
 class Car;
 
@@ -27,7 +24,7 @@ class Network
 	public:
 	Network(std::size_t input_count, std::size_t output_count);
 
-	void dump(std::ostream& stream = std::cout) const;
+	void dump(std::ostream& stream) const;
 
 	NeuronLayer& inputs();
 	NeuronLayer& outputs();

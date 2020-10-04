@@ -1,8 +1,8 @@
-#ifndef BODY_HPP
-#define BODY_HPP
+#pragma once
 
-#include "world.hpp"
+#include <SFML/Graphics.hpp>
 #include <box2d/box2d.h>
+#include <vector>
 
 class World;
 class Body;
@@ -62,5 +62,3 @@ class Body
 	b2Body*   _body;
 	World&    _world;
 };
-
-#endif // BODY_HPP

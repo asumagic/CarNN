@@ -1,7 +1,7 @@
 #include "network.hpp"
 
 #include "../entities/car.hpp"
-
+#include "../randomutil.hpp"
 #include <fmt/core.h>
 
 Network::Network(std::size_t input_count, std::size_t output_count)

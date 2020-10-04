@@ -1,5 +1,6 @@
 #include "wheel.hpp"
-#include <iostream>
+
+#include "../world.hpp"
 
 Wheel::Wheel(World& world, const b2BodyDef bdef, const bool do_render) : Body(world, bdef, do_render)
 {

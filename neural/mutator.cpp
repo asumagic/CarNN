@@ -1,6 +1,7 @@
 #include "mutator.hpp"
 
 #include "../entities/car.hpp"
+#include "../neural/network.hpp"
 #include "../randomutil.hpp"
 
 bool NetworkResult::operator<(const NetworkResult& other) const { return car->fitness() < other.car->fitness(); }

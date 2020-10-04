@@ -1,14 +1,14 @@
-#ifndef CAR_HPP
-#define CAR_HPP
+#pragma once
 
 #include "../body.hpp"
-#include "../neural/network.hpp"
-#include "../world.hpp"
-#include "checkpoint.hpp"
-#include "wheel.hpp"
 #include <vector>
 
-constexpr size_t total_rays = 9;
+constexpr size_t total_rays = 7;
+
+class Checkpoint;
+class Network;
+class Wheel;
+class World;
 
 enum AxonControl : size_t
 {
@@ -50,7 +50,6 @@ class Car : public Body
 	void accelerate(float by);
 	void apply_torque(float by);
 	void set_drift(const float drift_amount);
-	// void feedback(float v);
 
 	void transform(const b2Vec2 pos, const float angle);
 
@@ -65,11 +64,7 @@ class Car : public Body
 
 	std::array<double, total_rays> _net_inputs{};
 
-	b2Vec2 _net_direction{0.0f, 0.0f};
-
 	std::size_t _raycast_updates = 0;
-
-	// double _net_feedback = 0.;
 
 	float _drift_amount = 0.0;
 
@@ -83,5 +78,3 @@ class Car : public Body
 
 	const float _angle_lock = 0.9f, _turn_speed = 1.0f;
 };
-
-#endif // CAR_HPP

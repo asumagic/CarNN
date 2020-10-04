@@ -266,7 +266,7 @@ int app(sf::RenderWindow& win)
 					}
 					else if (ev.key.code == sf::Keyboard::D)
 					{
-						networks[std::distance(cars.begin(), top_car_it)].dump();
+						networks[std::distance(cars.begin(), top_car_it)].dump(std::cout);
 					}
 					break;
 

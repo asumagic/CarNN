@@ -1,5 +1,9 @@
 #include "car.hpp"
 #include "../maths.hpp"
+#include "../neural/network.hpp"
+#include "../world.hpp"
+#include "checkpoint.hpp"
+#include "wheel.hpp"
 #include <iostream>
 
 void CarCheckpointListener::BeginContact(b2Contact* contact)
@@ -112,9 +116,6 @@ void Car::update()
 		printf("%f\n", _body->GetAngularVelocity());
 		fitness_penalty(10.0f);
 	}*/
-
-	float angle    = _body->GetAngle();
-	_net_direction = 0.5f * b2Vec2{std::cos(angle), std::sin(angle)} + b2Vec2{0.5f, 0.5f};
 }
 
 void Car::render(sf::RenderTarget& target)
@@ -216,12 +217,7 @@ void Car::apply_torque(float by)
 }
 
 void Car::set_drift(const float drift_amount) { _drift_amount = drift_amount; }
-/*
-void Car::feedback(float v)
-{
-	_net_feedback = v;
-}
-*/
+
 void Car::transform(const b2Vec2 pos, const float angle)
 {
 	_body->SetTransform(pos, angle);
