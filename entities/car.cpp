@@ -305,13 +305,13 @@ void Car::update_inputs(Network& n)
 	b2Vec2 objective_dir = 0.5f * direction_to_objective() + b2Vec2(0.5f, 0.5f);
 
 	// inputs.neurons[i++].value = _net_feedback;
-	inputs.neurons[i++].value = objective_dir.x;
-	inputs.neurons[i++].value = objective_dir.y;
-	inputs.neurons[i++].value = lerp(0.0, 1.0, forward_velocity().Length() / 6.0f);
-	inputs.neurons[i++].value = lerp(0.0, 1.0, lateral_velocity().Length() / 1.0f);
+	inputs.neurons[i++].partial_activation = objective_dir.x;
+	inputs.neurons[i++].partial_activation = objective_dir.y;
+	inputs.neurons[i++].partial_activation = lerp(0.0, 1.0, forward_velocity().Length() / 6.0f);
+	inputs.neurons[i++].partial_activation = lerp(0.0, 1.0, lateral_velocity().Length() / 1.0f);
 
 	for (std::size_t j = 0; j < _ray_distances.size(); ++j, ++i)
 	{
-		inputs.neurons[i].value = _ray_distances[j];
+		inputs.neurons[i].partial_activation = _ray_distances[j];
 	}
 }

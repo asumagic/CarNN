@@ -84,10 +84,11 @@ void Network::update()
 	{
 		for (Neuron& neuron : layer.neurons)
 		{
+			neuron.compute_value();
+
 			// hack lol
 			if (&layer != &layers.front())
 			{
-				neuron.compute_value();
 				neuron.partial_activation = 0.0f;
 			}
 		}
