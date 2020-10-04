@@ -14,6 +14,7 @@ add_executable(${PROJECT_NAME}
 	neural/mutator.cpp
 	neural/network.cpp
 	neural/neuron.cpp
+	neural/visualizer.cpp
 	body.cpp
 	main.cpp
 	randomutil.cpp

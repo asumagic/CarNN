@@ -1,6 +1,7 @@
 #pragma once
 
 #include "synapse.hpp"
+#include <string>
 #include <vector>
 
 class Network;
@@ -19,6 +20,7 @@ struct Neuron
 	double           value;
 	double           bias              = 0.0;
 	ActivationMethod activation_method = ActivationMethod::Sigmoid;
+	std::string      label;
 
 	std::vector<Synapse> synapses;
 

@@ -59,7 +59,7 @@ Car::Car(World& world, const b2BodyDef bdef, const bool do_render) : Body(world,
 
 		b2FixtureDef fixdef;
 		fixdef.shape             = &shape;
-		fixdef.density           = 50.f;
+		fixdef.density           = 100.0f;
 		fixdef.filter.groupIndex = -1;
 		fixdef.friction          = 0.95f;
 
@@ -104,7 +104,7 @@ void Car::update()
 {
 	for (Wheel* wheel : _wheels)
 	{
-		wheel->cancel_lateral_force(lerp(1.f, 0.5f, _drift_amount));
+		wheel->cancel_lateral_force(lerp(1.f, 0.1f, _drift_amount));
 		wheel->drag(_brake_amount);
 		wheel->update();
 	}
@@ -189,13 +189,17 @@ float Car::fitness() const
 
 void Car::fitness_penalty(float value) { _fitness_bias -= value; }
 
-void Car::wall_collision() { _acceleration_factor = 0.0f; }
+void Car::wall_collision()
+{
+	_acceleration_factor = 0.0f;
+	fitness_penalty(300);
+}
 
 void Car::accelerate(float by)
 {
 	by *= _acceleration_factor;
 
-	for (size_t i = 2; i < 4; ++i)
+	for (size_t i = 0; i < 4; ++i)
 		_wheels[i]->accelerate(by);
 }
 
@@ -238,8 +242,7 @@ void Car::compute_raycasts(Body& wall_body)
 			continue;
 		}
 
-		float rad_angle = _body->GetAngle()
-			- (static_cast<float>(i) / static_cast<float>(ray_count - 1)) * static_cast<float>(M_PI);
+		float rad_angle = _body->GetAngle() - (float(i) / float(ray_count - 1)) * float(M_PI);
 
 		b2RayCastInput rin;
 		rin.p1          = _body->GetPosition();
@@ -288,8 +291,8 @@ void Car::update_inputs(Network& n)
 	// inputs.neurons[i++].value = _net_feedback;
 	inputs.neurons[i++].value = objective_dir.x;
 	inputs.neurons[i++].value = objective_dir.y;
-	inputs.neurons[i++].value = lerp(0, 1, forward_velocity().Length() / 4.0f);
-	inputs.neurons[i++].value = lerp(0, 1, lateral_velocity().Length() / 4.0f);
+	inputs.neurons[i++].value = lerp(0.0, 1.0, forward_velocity().Length() / 6.0f);
+	inputs.neurons[i++].value = lerp(0.0, 1.0, lateral_velocity().Length() / 1.0f);
 
 	for (std::size_t j = 0; j < _ray_distances.size(); ++j, ++i)
 	{

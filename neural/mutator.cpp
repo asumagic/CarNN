@@ -68,30 +68,38 @@ Network Mutator::cross(const Network& a, const Network& b)
 
 void Mutator::darwin(std::vector<NetworkResult> results)
 {
-	float new_max_fitness = std::max_element(results.begin(), results.end())->car->fitness();
+	std::sort(results.begin(), results.end(), std::greater{});
+	float new_max_fitness = results[0].car->fitness();
 
 	if (new_max_fitness >= max_fitness + fitness_evolution_threshold)
 	{
-		std::sort(results.begin(), results.end(), std::greater{});
 		max_fitness = new_max_fitness;
 		++current_generation;
+
+		for (std::size_t i = 0; i < settings.round_survivors; ++i)
+		{
+			results[i].car->with_color(sf::Color{200, 50, 0, 50});
+			results[i].car->top_of_generation = true;
+		}
+
+		for (std::size_t i = settings.round_survivors; i < results.size(); ++i)
+		{
+			results[i].car->with_color(sf::Color{0, 0, 100, 70});
+			results[i].car->top_of_generation = false;
+		}
 	}
 
-	for (std::size_t i = 0; i < settings.round_survivors; ++i)
+	for (auto& result : results)
 	{
-		results[i].car->with_color(sf::Color{200, 50, 0, 50});
-	}
+		if (!result.car->top_of_generation)
+		{
+			// TODO: this allows self breeding, do we allow it?
+			*result.network = cross(
+				*results[random_int(0, settings.round_survivors - 1)].network,
+				*results[random_int(0, settings.round_survivors - 1)].network);
 
-	for (std::size_t i = settings.round_survivors; i < results.size(); ++i)
-	{
-		results[i].car->with_color(sf::Color{0, 0, 100, 70});
-
-		// TODO: this allows self breeding, do we allow it?
-		*results[i].network = cross(
-			*results[random_int(0, settings.round_survivors - 1)].network,
-			*results[random_int(0, settings.round_survivors - 1)].network);
-
-		mutate(*results[i].network);
+			mutate(*result.network);
+		}
 	}
 }
 

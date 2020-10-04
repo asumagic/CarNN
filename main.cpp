@@ -3,6 +3,7 @@
 #include "entities/wheel.hpp"
 #include "neural/mutator.hpp"
 #include "neural/network.hpp"
+#include "neural/visualizer.hpp"
 #include "randomutil.hpp"
 #include "world.hpp"
 #include <SFML/Graphics.hpp>
@@ -75,7 +76,6 @@ int app(sf::RenderWindow& win)
 	b2BodyDef bdef;
 	bdef.type           = b2_dynamicBody;
 	bdef.angularDamping = 0.01f;
-	bdef.linearDamping  = 0.1f;
 
 	std::array<b2Vec2, 8> vertices
 		= {{{-1.50f, -0.30f},
@@ -93,7 +93,7 @@ int app(sf::RenderWindow& win)
 	b2FixtureDef fixdef;
 	fixdef.shape             = &shape;
 	fixdef.density           = 100.f;
-	fixdef.friction          = 0.05f;
+	fixdef.friction          = 1.0f;
 	fixdef.restitution       = 0.2f;
 	fixdef.filter.groupIndex = -1;
 
@@ -136,7 +136,7 @@ int app(sf::RenderWindow& win)
 		reset();
 	};
 
-	for (std::size_t i = 0; i < 150; ++i)
+	for (std::size_t i = 0; i < 60; ++i)
 	{
 		Car& car = w.add_body<Car>(bdef);
 		cars.push_back(&car);
@@ -146,6 +146,25 @@ int app(sf::RenderWindow& win)
 
 		auto& last_network = networks.emplace_back(total_rays + 4, 6);
 		mutator.randomize(last_network);
+
+		auto& inputs  = last_network.inputs().neurons;
+		auto& outputs = last_network.outputs().neurons;
+
+		inputs[0].label = "vector to objective (x)";
+		inputs[1].label = "vector to objective (y)";
+		inputs[2].label = "velocity (forward)";
+		inputs[3].label = "velocity (lateral)";
+		for (int i = 4; i < inputs.size(); ++i)
+		{
+			inputs[i].label = fmt::format("lidar #{}", i - 4 + 1);
+		}
+
+		outputs[Axon_Forward].label     = "Forward";
+		outputs[Axon_Backwards].label   = "Backwards";
+		outputs[Axon_Brake].label       = "Brake force";
+		outputs[Axon_Steer_Left].label  = "Left steering";
+		outputs[Axon_Steer_Right].label = "Right steering";
+		outputs[Axon_Drift].label       = "Drifting";
 	}
 
 	// Add the listener AFTER moving the car
@@ -169,16 +188,14 @@ int app(sf::RenderWindow& win)
 	sf::Text car_info;
 	car_info.setFont(infofnt);
 	car_info.setFillColor(sf::Color::White);
-	car_info.setCharacterSize(30);
-	car_info.setScale(0.4f, 0.4f);
+	car_info.setCharacterSize(20);
 	car_info.setPosition(16.f, 16.f);
 	car_info.setStyle(sf::Text::Bold);
 
 	sf::Text fps_info;
 	fps_info.setFont(infofnt);
 	fps_info.setFillColor(sf::Color{80, 80, 80});
-	fps_info.setCharacterSize(30);
-	fps_info.setScale(0.4f, 0.4f);
+	fps_info.setCharacterSize(20);
 	fps_info.setStyle(sf::Text::Bold);
 
 	float highest_fitness    = 0.0f;
@@ -189,7 +206,8 @@ int app(sf::RenderWindow& win)
 		auto top_car_it = std::max_element(
 			cars.begin(), cars.end(), [&](const Car* a, const Car* b) { return a->fitness() < b->fitness(); });
 
-		Car& top_car = **top_car_it;
+		Car&     top_car     = **top_car_it;
+		Network& top_network = networks[std::distance(cars.begin(), top_car_it)];
 
 // @TODO move this mess
 #pragma omp parallel for
@@ -201,22 +219,56 @@ int app(sf::RenderWindow& win)
 			c.set_target_checkpoint(
 				c.reached_checkpoints() == checkpoints.size() ? nullptr : checkpoints[c.reached_checkpoints()]);
 
+			c.compute_raycasts(*wall_body);
+
 			c.update_inputs(net);
 			net.update();
 			const auto& results = net.outputs();
 
-			c.set_drift(static_cast<float>(results.neurons[Axon_Drift].value));
-			c.steer(
-				static_cast<float>(results.neurons[Axon_Steer_Right].value - results.neurons[Axon_Steer_Left].value));
-			c.accelerate(
-				static_cast<float>(results.neurons[Axon_Forward].value - results.neurons[Axon_Backwards].value));
-			c.brake(results.neurons[Axon_Brake].value);
+			if (false)
+			{
+				const bool forward = sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
+				const bool left    = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
+				const bool right   = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
+				const bool back    = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+				const bool brake   = sf::Keyboard::isKeyPressed(sf::Keyboard::C);
+				const bool drift   = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
 
-			c.compute_raycasts(*wall_body);
+				if (forward ^ back)
+				{
+					c.accelerate(forward ? 1.0f : -1.0f);
+				}
+				else
+				{
+					c.accelerate(0.0f);
+				}
+
+				if (left ^ right)
+				{
+					c.steer(right ? 1.0f : -1.0f);
+				}
+				else
+				{
+					c.steer(0.0f);
+				}
+
+				c.brake(brake ? 1.0f : 0.0f);
+
+				c.set_drift(drift ? 1.0f : 0.0f);
+			}
+			else
+			{
+				c.set_drift(static_cast<float>(results.neurons[Axon_Drift].value));
+				c.steer(static_cast<float>(
+					results.neurons[Axon_Steer_Right].value - results.neurons[Axon_Steer_Left].value));
+				c.accelerate(
+					static_cast<float>(results.neurons[Axon_Forward].value - results.neurons[Axon_Backwards].value));
+				c.brake(results.neurons[Axon_Brake].value);
+			}
 		}
 
 		float real_dt = dtclock.restart().asSeconds();
-		w.set_dt(1.0f / 30.0f);
+		w.set_dt(1.0f / 45.0f);
 		w.step(speed, 8, 8).update();
 
 		++ticks;
@@ -229,7 +281,7 @@ int app(sf::RenderWindow& win)
 			fitness_stall_time = 0.0f;
 		}
 
-		if (total_time > 50.0f || fitness_stall_time > 15.0f)
+		if (total_time > 45.0f || fitness_stall_time > 15.0f)
 		{
 			mutate();
 
@@ -266,7 +318,7 @@ int app(sf::RenderWindow& win)
 					}
 					else if (ev.key.code == sf::Keyboard::D)
 					{
-						networks[std::distance(cars.begin(), top_car_it)].dump(std::cout);
+						top_network.dump(std::cout);
 					}
 					break;
 
@@ -287,12 +339,14 @@ int app(sf::RenderWindow& win)
 			w.update_view(win, sf::Vector2f{b2target.x, b2target.y}, czoom);
 
 			sf::View cview{win.getView()};
-			float    ui_scale = 0.5f;
+			float    ui_scale = 1.0f;
 			win.setView(sf::View{sf::FloatRect{
 				0.f,
 				0.f,
 				static_cast<float>(win.getSize().x) * ui_scale,
 				static_cast<float>(win.getSize().y) * ui_scale}});
+
+			Visualizer{top_network}.display(win, infofnt);
 
 			car_info.setString(fmt::format(
 				"Generation #{}\n"
@@ -304,7 +358,7 @@ int app(sf::RenderWindow& win)
 
 			fps_info.setString(fmt::format("{:.1f}ups", 1.0f / real_dt));
 
-			fps_info.setPosition(8.f, (0.5f * win.getSize().y) - 16.f);
+			fps_info.setPosition(8.f, win.getView().getSize().y - 32.f);
 
 			win.draw(car_info);
 			win.draw(fps_info);

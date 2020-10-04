@@ -39,7 +39,7 @@ void Body::render(sf::RenderTarget& target)
 
 void Body::set_type(const BodyType type) { _bud.type = type; }
 
-b2Vec2 Body::front_normal() const { return _body->GetWorldVector(b2Vec2{0.f, 1.f}); }
+b2Vec2 Body::front_normal() const { return _body->GetWorldVector(b2Vec2{0.f, -1.f}); }
 
 b2Vec2 Body::lateral_normal() const { return _body->GetWorldVector(b2Vec2{1.f, 0.f}); }
 

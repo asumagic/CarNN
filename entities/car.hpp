@@ -3,7 +3,7 @@
 #include "../body.hpp"
 #include <vector>
 
-constexpr size_t total_rays = 7;
+constexpr size_t total_rays = 9;
 
 class Checkpoint;
 class Network;
@@ -59,6 +59,8 @@ class Car : public Body
 
 	void update_inputs(Network& n);
 
+	bool top_of_generation = false;
+
 	private:
 	std::array<sf::Vertex, total_rays * 2> _rays{};
 	std::vector<Wheel*>                    _wheels;
@@ -79,5 +81,5 @@ class Car : public Body
 	Checkpoint* _latest_checkpoint = nullptr;
 	Checkpoint* _target_checkpoint = nullptr;
 
-	const float _angle_lock = 0.9f, _turn_speed = 1.0f;
+	const float _angle_lock = 0.8f, _turn_speed = 1.8f;
 };

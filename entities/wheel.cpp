@@ -11,7 +11,7 @@ Wheel::Wheel(World& world, const b2BodyDef bdef, const bool do_render) : Body(wo
 void Wheel::cancel_lateral_force(const float multiplier)
 {
 	float  mul     = multiplier * _world.dt() * 60.f;
-	b2Vec2 impulse = _body->GetMass() * _world.dt() * 60.f * -lateral_velocity();
+	b2Vec2 impulse = _body->GetMass() * -lateral_velocity();
 	if (impulse.Length() > (_max_lateral_impulse * mul))
 		impulse *= (_max_lateral_impulse * mul) / impulse.Length();
 
@@ -33,9 +33,9 @@ void Wheel::accelerate(float throttle)
 
 	float final_force;
 	if (throttle > 0)
-		final_force = _max_accel_force * _backwards_mul * std::abs(throttle);
+		final_force = _max_accel_force * _forward_mul * std::abs(throttle);
 	else if (throttle < 0)
-		final_force = -_max_accel_force * _forward_mul * std::abs(throttle);
+		final_force = -_max_accel_force * _backwards_mul * std::abs(throttle);
 	else
 		return;
 
