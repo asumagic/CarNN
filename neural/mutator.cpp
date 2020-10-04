@@ -114,7 +114,7 @@ void Mutator::create_random_neuron(Network& network)
 
 	do
 	{
-		const std::size_t random_neuron = random_int(0, network.inputs().neurons.size());
+		const std::size_t random_neuron = random_int(0, network.inputs().neurons.size() - 1);
 		Neuron&           predecessor   = network.neuron(network.nth_neuron(random_neuron, 0));
 
 		Synapse& synapse = predecessor.synapses.emplace_back();
@@ -223,7 +223,7 @@ void Mutator::randomize(Network& network)
 void Mutator::randomize(Neuron& neuron)
 {
 	neuron.bias              = random_gauss_double(0.0, settings.bias_initial_std_dev);
-	neuron.activation_method = ActivationMethod(random_int(0, int(ActivationMethod::Total)));
+	neuron.activation_method = ActivationMethod(random_int(0, int(ActivationMethod::Total) - 1));
 }
 
 void Mutator::randomize(Synapse& synapse)
