@@ -231,6 +231,15 @@ int app(sf::RenderWindow& win)
 
 			if (false)
 			{
+				if (sf::Joystick::isConnected(0))
+				{
+					c.steer(sf::Joystick::getAxisPosition(0, sf::Joystick::X) / 100.0f);
+					c.accelerate(1.0f - (sf::Joystick::getAxisPosition(0, sf::Joystick::Y) / 200.0f + 0.5f)); // wtf
+					c.brake(1.0f - (sf::Joystick::getAxisPosition(0, sf::Joystick::Z) / 200.0f + 0.5f));      // wtf
+				}
+			}
+			else if (false)
+			{
 				const bool forward = sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
 				const bool left    = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
 				const bool right   = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
