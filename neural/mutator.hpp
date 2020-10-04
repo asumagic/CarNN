@@ -6,7 +6,7 @@
 class Network;
 class Car;
 struct Neuron;
-struct ForwardSynapse;
+struct Synapse;
 
 struct NetworkResult
 {
@@ -64,7 +64,7 @@ class Mutator
 
 	void randomize(Network& network);
 	void randomize(Neuron& neuron);
-	void randomize(ForwardSynapse& synapse);
+	void randomize(Synapse& synapse);
 
 	void gc(Network& network, bool aggressive);
 };

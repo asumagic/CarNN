@@ -97,7 +97,7 @@ void Mutator::darwin(std::vector<NetworkResult> results)
 
 void Mutator::create_random_neuron(Network& network)
 {
-	NeuronLayer& hidden_layer = network.layers[1];
+	Layer& hidden_layer = network.layers[1];
 
 	Neuron& neuron = hidden_layer.neurons.emplace_back();
 	randomize(neuron);
@@ -107,8 +107,8 @@ void Mutator::create_random_neuron(Network& network)
 		const std::size_t random_neuron = random_int(0, network.inputs().neurons.size());
 		Neuron&           predecessor   = network.neuron(network.nth_neuron(random_neuron, 0));
 
-		ForwardSynapse& synapse           = predecessor.synapses.emplace_back();
-		synapse.forward_neuron_identifier = NeuronIdentifier{1, hidden_layer.neurons.size() - 1};
+		Synapse& synapse = predecessor.synapses.emplace_back();
+		synapse.target   = NeuronId{1, hidden_layer.neurons.size() - 1};
 		randomize(synapse);
 	} while (random_bool(settings.extra_synapse_connection_chance));
 
@@ -119,10 +119,10 @@ void Mutator::create_random_neuron(Network& network)
 		const std::size_t random_neuron
 			= random_int(0, network.layers[1].neurons.size() + network.layers[2].neurons.size() - 1);
 
-		const NeuronIdentifier successor_identifier = network.nth_neuron(random_neuron, 1);
+		const NeuronId successor_identifier = network.nth_neuron(random_neuron, 1);
 
-		ForwardSynapse& synapse           = neuron.synapses.emplace_back();
-		synapse.forward_neuron_identifier = successor_identifier;
+		Synapse& synapse = neuron.synapses.emplace_back();
+		synapse.target   = successor_identifier;
 		randomize(synapse);
 	} while (random_bool(settings.extra_synapse_connection_chance));
 }
@@ -141,8 +141,8 @@ void Mutator::destroy_random_synapse(Network& network)
 			synapse_count += neuron.synapses.size();
 		}
 
-	std::size_t              random_synapse    = random_int(0, synapse_count - 1);
-	ForwardSynapseIdentifier synapse_identifer = network.nth_synapse(random_synapse);
+	std::size_t random_synapse    = random_int(0, synapse_count - 1);
+	SynapseId   synapse_identifer = network.nth_synapse(random_synapse);
 
 	Neuron& infected_neuron = network.neuron(synapse_identifer.source_neuron);
 	infected_neuron.synapses.erase(infected_neuron.synapses.begin() + synapse_identifer.synapse_in_neuron);
@@ -216,7 +216,7 @@ void Mutator::randomize(Neuron& neuron)
 	neuron.activation_method = ActivationMethod(random_int(0, int(ActivationMethod::Total)));
 }
 
-void Mutator::randomize(ForwardSynapse& synapse)
+void Mutator::randomize(Synapse& synapse)
 {
 	synapse.weight = random_gauss_double(0.0, settings.weight_initial_std_dev);
 }
@@ -230,12 +230,11 @@ void Mutator::gc(Network& network, bool aggressive)
 			// we can't erase neurons because neuron identifiers must be stable.
 			// but synapses are fine, as we don't refer to them permanently.
 
-			std::sort(
-				neuron.synapses.begin(), neuron.synapses.end(), [](const ForwardSynapse& a, const ForwardSynapse& b) {
-					return a.forward_neuron_identifier < b.forward_neuron_identifier;
-				});
+			std::sort(neuron.synapses.begin(), neuron.synapses.end(), [](const Synapse& a, const Synapse& b) {
+				return a.target < b.target;
+			});
 
-			ForwardSynapse* last_identical_synapse = nullptr;
+			Synapse* last_identical_synapse = nullptr;
 
 			for (auto synapse_it = neuron.synapses.begin(); synapse_it != neuron.synapses.end();)
 			{
@@ -245,8 +244,7 @@ void Mutator::gc(Network& network, bool aggressive)
 					continue;
 				}
 
-				if (last_identical_synapse != nullptr
-					&& synapse_it->forward_neuron_identifier == last_identical_synapse->forward_neuron_identifier)
+				if (last_identical_synapse != nullptr && synapse_it->target == last_identical_synapse->target)
 				{
 					last_identical_synapse->weight += synapse_it->weight;
 					synapse_it = neuron.synapses.erase(synapse_it);

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../maths.hpp"
-#include "forwardsynapseidentifier.hpp"
 #include "neuron.hpp"
+#include "synapseid.hpp"
 #include <array>
 #include <cassert>
 #include <cmath>
@@ -14,7 +14,7 @@ class Car;
 struct Neuron;
 class Network;
 
-struct NeuronLayer
+struct Layer
 {
 	std::vector<Neuron> neurons;
 };
@@ -26,58 +26,58 @@ class Network
 
 	void dump(std::ostream& stream) const;
 
-	NeuronLayer& inputs();
-	NeuronLayer& outputs();
+	Layer& inputs();
+	Layer& outputs();
 
-	NeuronIdentifier insert_random_neuron();
-	NeuronIdentifier erase_random_neuron();
+	NeuronId insert_random_neuron();
+	NeuronId erase_random_neuron();
 
-	Neuron&         neuron(NeuronIdentifier identifier);
-	ForwardSynapse& synapse(ForwardSynapseIdentifier identifier);
+	Neuron&  neuron(NeuronId identifier);
+	Synapse& synapse(SynapseId identifier);
 
-	NeuronIdentifier         nth_neuron(std::size_t n, std::size_t first_layer = 0);
-	ForwardSynapseIdentifier nth_synapse(std::size_t n, std::size_t first_layer = 0);
+	NeuronId  nth_neuron(std::size_t n, std::size_t first_layer = 0);
+	SynapseId nth_synapse(std::size_t n, std::size_t first_layer = 0);
 
-	std::size_t      neuron_count(std::size_t first_layer, std::size_t last_layer);
-	NeuronIdentifier random_neuron(std::size_t first_layer, std::size_t last_layer);
+	std::size_t neuron_count(std::size_t first_layer, std::size_t last_layer);
+	NeuronId    random_neuron(std::size_t first_layer, std::size_t last_layer);
 
-	std::size_t              synapse_count(std::size_t first_layer, std::size_t last_layer);
-	ForwardSynapseIdentifier random_synapse(std::size_t first_layer, std::size_t last_layer);
+	std::size_t synapse_count(std::size_t first_layer, std::size_t last_layer);
+	SynapseId   random_synapse(std::size_t first_layer, std::size_t last_layer);
 
-	std::array<NeuronLayer, 3> layers{};
+	std::array<Layer, 3> layers{};
 
 	void update();
 
 	void reset_values();
 
 	private:
-	void sanitize(NeuronIdentifier identifier);
-	void sanitize(ForwardSynapseIdentifier identifier);
+	void sanitize(NeuronId identifier);
+	void sanitize(SynapseId identifier);
 };
 
-inline NeuronLayer& Network::inputs() { return layers.front(); }
+inline Layer& Network::inputs() { return layers.front(); }
 
-inline NeuronLayer& Network::outputs() { return layers.back(); }
+inline Layer& Network::outputs() { return layers.back(); }
 
-inline Neuron& Network::neuron(NeuronIdentifier identifier)
+inline Neuron& Network::neuron(NeuronId identifier)
 {
 	sanitize(identifier);
 	return layers[identifier.layer()].neurons[identifier.neuron_in_layer()];
 }
 
-inline ForwardSynapse& Network::synapse(ForwardSynapseIdentifier identifier)
+inline Synapse& Network::synapse(SynapseId identifier)
 {
 	sanitize(identifier);
 	return neuron(identifier.source_neuron).synapses[identifier.synapse_in_neuron];
 }
 
-inline void Network::sanitize([[maybe_unused]] NeuronIdentifier identifier)
+inline void Network::sanitize([[maybe_unused]] NeuronId identifier)
 {
 	assert(identifier.layer() < layers.size());
 	assert(identifier.neuron_in_layer() < layers[identifier.layer()].neurons.size());
 }
 
-inline void Network::sanitize([[maybe_unused]] ForwardSynapseIdentifier identifier)
+inline void Network::sanitize([[maybe_unused]] SynapseId identifier)
 {
 	assert(identifier.synapse_in_neuron < neuron(identifier.source_neuron).synapses.size());
 }

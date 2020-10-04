@@ -1,6 +1,6 @@
 #pragma once
 
-#include "forwardsynapse.hpp"
+#include "synapse.hpp"
 #include <vector>
 
 class Network;
@@ -20,7 +20,7 @@ struct Neuron
 	double           bias              = 0.0;
 	ActivationMethod activation_method = ActivationMethod::Sigmoid;
 
-	std::vector<ForwardSynapse> synapses;
+	std::vector<Synapse> synapses;
 
 	void compute_value();
 	void propagate_forward(Network& network);

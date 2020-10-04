@@ -17,8 +17,8 @@ Network::Network(std::size_t input_count, std::size_t output_count)
 
 		for (std::size_t i = 0; i < output_count; ++i)
 		{
-			ForwardSynapse& synapse           = input.synapses[i];
-			synapse.forward_neuron_identifier = {layers.size() - 1, i};
+			Synapse& synapse = input.synapses[i];
+			synapse.target   = {layers.size() - 1, i};
 		}
 	}
 }
@@ -51,8 +51,8 @@ void Network::dump(std::ostream& stream) const
 		for (std::size_t neuron_identifier = 0; neuron_identifier < layers[layer_identifier].neurons.size();
 			 ++neuron_identifier)
 		{
-			NeuronIdentifier current_identifier{layer_identifier, neuron_identifier};
-			const Neuron&    current = layers[layer_identifier].neurons[neuron_identifier];
+			NeuronId      current_identifier{layer_identifier, neuron_identifier};
+			const Neuron& current = layers[layer_identifier].neurons[neuron_identifier];
 
 			stream << fmt::format(R"({} [label="{:.2f}"];)", current_identifier.value, current.bias);
 		}
@@ -64,16 +64,13 @@ void Network::dump(std::ostream& stream) const
 		for (std::size_t neuron_identifier = 0; neuron_identifier < layers[layer_identifier].neurons.size();
 			 ++neuron_identifier)
 		{
-			NeuronIdentifier current_identifier{layer_identifier, neuron_identifier};
-			const Neuron&    current = layers[layer_identifier].neurons[neuron_identifier];
+			NeuronId      current_identifier{layer_identifier, neuron_identifier};
+			const Neuron& current = layers[layer_identifier].neurons[neuron_identifier];
 
-			for (const ForwardSynapse& synapse : current.synapses)
+			for (const Synapse& synapse : current.synapses)
 			{
 				stream << fmt::format(
-					R"({} -> {} [label="{:.2f}"])",
-					current_identifier.value,
-					synapse.forward_neuron_identifier.value,
-					synapse.weight);
+					R"({} -> {} [label="{:.2f}"])", current_identifier.value, synapse.target.value, synapse.weight);
 			}
 		}
 	}
@@ -83,7 +80,7 @@ void Network::dump(std::ostream& stream) const
 
 void Network::update()
 {
-	for (NeuronLayer& layer : layers)
+	for (Layer& layer : layers)
 	{
 		for (Neuron& neuron : layer.neurons)
 		{
@@ -96,7 +93,7 @@ void Network::update()
 		}
 	}
 
-	for (NeuronLayer& layer : layers)
+	for (Layer& layer : layers)
 	{
 		for (Neuron& neuron : layer.neurons)
 		{
@@ -112,7 +109,7 @@ void Network::update()
 
 void Network::reset_values()
 {
-	for (NeuronLayer& layer : layers)
+	for (Layer& layer : layers)
 	{
 		for (Neuron& neuron : layer.neurons)
 		{
@@ -121,7 +118,7 @@ void Network::reset_values()
 	}
 }
 
-ForwardSynapseIdentifier Network::nth_synapse(std::size_t n, std::size_t first_layer)
+SynapseId Network::nth_synapse(std::size_t n, std::size_t first_layer)
 {
 	std::size_t synapses_found = 0;
 
@@ -152,7 +149,7 @@ std::size_t Network::neuron_count(std::size_t first_layer, std::size_t last_laye
 	return sum;
 }
 
-NeuronIdentifier Network::random_neuron(std::size_t first_layer, std::size_t last_layer)
+NeuronId Network::random_neuron(std::size_t first_layer, std::size_t last_layer)
 {
 	return nth_neuron(random_int(0, neuron_count(first_layer, last_layer) - 1));
 }
@@ -172,18 +169,18 @@ std::size_t Network::synapse_count(std::size_t first_layer, std::size_t last_lay
 	return sum;
 }
 
-ForwardSynapseIdentifier Network::random_synapse(std::size_t first_layer, std::size_t last_layer)
+SynapseId Network::random_synapse(std::size_t first_layer, std::size_t last_layer)
 {
 	return nth_synapse(random_int(0, synapse_count(first_layer, last_layer) - 1));
 }
 
-NeuronIdentifier Network::nth_neuron(std::size_t n, std::size_t first_layer)
+NeuronId Network::nth_neuron(std::size_t n, std::size_t first_layer)
 {
 	std::size_t neurons_found = 0;
 
 	for (std::size_t layer_identifier = first_layer;; ++layer_identifier)
 	{
-		const NeuronLayer& layer = layers.at(layer_identifier);
+		const Layer& layer = layers.at(layer_identifier);
 
 		if (neurons_found + layer.neurons.size() > n)
 		{
