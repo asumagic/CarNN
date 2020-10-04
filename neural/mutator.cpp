@@ -10,9 +10,9 @@ bool NetworkResult::operator>(const NetworkResult& other) const { return car->fi
 
 Network Mutator::cross(const Network& a, const Network& b)
 {
-	assert(a.layers.size() == b.layers.size());
-	assert(a.layers.front().size() == b.layers.front().size());
-	assert(a.layers.back().size() == b.layers.back().size());
+	/*	assert(a.layers.size() == b.layers.size());
+		assert(a.layers.front().size() == b.layers.front().size());
+		assert(a.layers.back().size() == b.layers.back().size());*/
 
 	Network ret{a.layers.front().neurons.size(), a.layers.back().neurons.size()};
 	ret.layers = a.layers;
@@ -101,6 +101,8 @@ void Mutator::darwin(std::vector<NetworkResult> results)
 			mutate(*result.network);
 		}
 	}
+
+	fprintf(stderr, "%f;%d\n", new_max_fitness, int(current_generation));
 }
 
 void Mutator::create_random_neuron(Network& network)

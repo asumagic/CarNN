@@ -136,7 +136,7 @@ int app(sf::RenderWindow& win)
 		reset();
 	};
 
-	for (std::size_t i = 0; i < 60; ++i)
+	for (std::size_t i = 0; i < 100; ++i)
 	{
 		Car& car = w.add_body<Car>(bdef);
 		cars.push_back(&car);
@@ -216,8 +216,12 @@ int app(sf::RenderWindow& win)
 			Car&     c   = *cars[i];
 			Network& net = networks[i];
 
-			c.set_target_checkpoint(
-				c.reached_checkpoints() == checkpoints.size() ? nullptr : checkpoints[c.reached_checkpoints()]);
+			if (c.dead)
+			{
+				continue;
+			}
+
+			c.set_target_checkpoint(checkpoints[c.reached_checkpoints() % checkpoints.size()]);
 
 			c.compute_raycasts(*wall_body);
 
@@ -268,8 +272,8 @@ int app(sf::RenderWindow& win)
 		}
 
 		float real_dt = dtclock.restart().asSeconds();
-		w.set_dt(1.0f / 45.0f);
-		w.step(speed, 8, 8).update();
+		w.set_dt(1.0f / 30.0f);
+		w.step(speed, 1, 1).update();
 
 		++ticks;
 		total_time += w.dt();
@@ -281,7 +285,7 @@ int app(sf::RenderWindow& win)
 			fitness_stall_time = 0.0f;
 		}
 
-		if (total_time > 45.0f || fitness_stall_time > 15.0f)
+		if (total_time > 60.0f * 5.0f || fitness_stall_time > 40.0f)
 		{
 			mutate();
 
@@ -291,7 +295,7 @@ int app(sf::RenderWindow& win)
 
 		win.setFramerateLimit(fast_simulation ? 0 : 80);
 
-		if (!fast_simulation || ticks % 10 == 0)
+		if (!fast_simulation || ticks % 60 == 0)
 		{
 			for (sf::Event ev; win.pollEvent(ev);)
 			{

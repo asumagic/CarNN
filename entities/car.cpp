@@ -84,8 +84,10 @@ Car::Car(World& world, const b2BodyDef bdef, const bool do_render) : Body(world,
 
 void Car::reset()
 {
-	_latest_checkpoint = nullptr;
-	_fitness_bias      = 0.0f;
+	dead                 = false;
+	_latest_checkpoint   = nullptr;
+	_reached_checkpoints = 0;
+	_fitness_bias        = 0.0f;
 	//_net_feedback = 0.0f;
 	_fitness             = 0.0f;
 	_acceleration_factor = 1.0f;
@@ -102,6 +104,14 @@ void Car::reset()
 
 void Car::update()
 {
+	_body->SetSleepingAllowed(true);
+	_body->SetAwake(!dead);
+
+	if (dead)
+	{
+		return;
+	}
+
 	for (Wheel* wheel : _wheels)
 	{
 		wheel->cancel_lateral_force(lerp(1.f, 0.1f, _drift_amount));
@@ -120,21 +130,26 @@ void Car::update()
 
 void Car::render(sf::RenderTarget& target)
 {
-	target.draw(_rays.data(), _rays.size(), sf::Lines);
+	if (!dead)
+	{
+		target.draw(_rays.data(), _rays.size(), sf::Lines);
+	}
+
 	Body::render(target);
 }
 
 void Car::contact_checkpoint(Checkpoint& cp)
 {
-	if (reached_checkpoints() == cp.id)
+	if (_target_checkpoint == &cp)
 	{
 		_latest_checkpoint = &cp;
+		++_reached_checkpoints;
 	}
 }
 
 void Car::set_target_checkpoint(Checkpoint* cp) { _target_checkpoint = cp; }
 
-std::size_t Car::reached_checkpoints() const { return _latest_checkpoint != nullptr ? _latest_checkpoint->id + 1 : 0; }
+std::size_t Car::reached_checkpoints() const { return _reached_checkpoints; }
 
 b2Vec2 Car::direction_to_objective() const
 {
@@ -193,13 +208,14 @@ void Car::wall_collision()
 {
 	_acceleration_factor = 0.0f;
 	fitness_penalty(300);
+	dead = true;
 }
 
 void Car::accelerate(float by)
 {
 	by *= _acceleration_factor;
 
-	for (size_t i = 0; i < 4; ++i)
+	for (size_t i = 0; i < 2; ++i)
 		_wheels[i]->accelerate(by);
 }
 
@@ -234,7 +250,7 @@ void Car::compute_raycasts(Body& wall_body)
 	++_ray_update_frequency;
 
 	const size_t ray_count = _rays.size() / 2;
-	const float  radius    = 64.f;
+	const float  radius    = 96.f;
 	for (size_t i = 0; i < ray_count; ++i)
 	{
 		if ((i + _ray_update_frequency) % 4 != 0)
