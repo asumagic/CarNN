@@ -8,6 +8,8 @@
 #include "world.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/vector.hpp>
 #include <fmt/core.h>
 #include <fstream>
 #include <iostream>
@@ -332,6 +334,21 @@ int app(sf::RenderWindow& win)
 					else if (ev.key.code == sf::Keyboard::D)
 					{
 						top_network.dump(std::cout);
+					}
+					else if (ev.key.code == sf::Keyboard::S)
+					{
+						std::ofstream               os("nets.bin", std::ios::binary);
+						cereal::BinaryOutputArchive archive(os);
+						archive(networks);
+					}
+					else if (ev.key.code == sf::Keyboard::L)
+					{
+						std::ifstream              is("nets.bin", std::ios::binary);
+						cereal::BinaryInputArchive archive(is);
+						archive(networks);
+
+						mutator = {};
+						reset();
 					}
 					break;
 

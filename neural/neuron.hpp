@@ -1,6 +1,8 @@
 #pragma once
 
 #include "synapse.hpp"
+#include <cereal/types/string.hpp>
+#include <cereal/types/vector.hpp>
 #include <string>
 #include <vector>
 
@@ -26,4 +28,14 @@ struct Neuron
 
 	void compute_value();
 	void propagate_forward(Network& network);
+
+	template<class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(CEREAL_NVP(partial_activation),
+		   CEREAL_NVP(bias),
+		   CEREAL_NVP(activation_method),
+		   CEREAL_NVP(label),
+		   CEREAL_NVP(synapses));
+	}
 };

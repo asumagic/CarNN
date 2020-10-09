@@ -5,6 +5,8 @@
 #include "synapseid.hpp"
 #include <array>
 #include <cassert>
+#include <cereal/types/array.hpp>
+#include <cereal/types/vector.hpp>
 #include <cmath>
 #include <iosfwd>
 #include <vector>
@@ -17,11 +19,18 @@ class Network;
 struct Layer
 {
 	std::vector<Neuron> neurons;
+
+	template<class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(CEREAL_NVP(neurons));
+	}
 };
 
 class Network
 {
 	public:
+	Network() = default;
 	Network(std::size_t input_count, std::size_t output_count);
 
 	void dump(std::ostream& stream) const;
@@ -46,6 +55,12 @@ class Network
 	void update();
 
 	void reset_values();
+
+	template<class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(CEREAL_NVP(layers));
+	}
 
 	private:
 	void sanitize(NeuronId identifier);
