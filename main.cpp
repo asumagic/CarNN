@@ -10,7 +10,6 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
 #include <cereal/types/vector.hpp>
 #include <fmt/core.h>
 #include <fstream>
@@ -111,11 +110,7 @@ int app(sf::RenderWindow& win)
 	fixdef.filter.groupIndex = -1;
 
 	Mutator mutator;
-	{
-		std::ifstream            os("mutator.json", std::ios::binary);
-		cereal::JSONInputArchive ar(os);
-		mutator.settings.serialize(ar);
-	}
+	mutator.settings.load_from_file();
 
 	std::vector<Car*>    cars;
 	std::vector<Network> networks;
@@ -422,14 +417,24 @@ int app(sf::RenderWindow& win)
 			{
 				if (ImGui::Begin("Mutator controls", &windows.mutator_open))
 				{
-					/*ImGui::Button("Load");
+					if (ImGui::Button("Load"))
+					{
+						mutator.settings.load_from_file();
+					}
 					ImGui::SameLine();
-					ImGui::Button("Save");
+					if (ImGui::Button("Save"))
+					{
+						mutator.settings.save();
+					}
 					ImGui::SameLine();
-					ImGui::Button("Defaults");
-					ImGui::Separator();*/
+					if (ImGui::Button("Defaults"))
+					{
+						mutator.settings.load_defaults();
+					}
+					ImGui::Separator();
 
 					ImGui::Text("Bias");
+					ImGui::PushID("Bias");
 					ImGui::InputFloat("Initial stddev", &mutator.settings.bias_initial_std_dev, 0.01, 0.1, "%.3f");
 					ImGui::InputFloat(
 						"Soft mutation stddev", &mutator.settings.bias_mutation_factor, 0.01, 0.1, "%.3f");
@@ -439,9 +444,11 @@ int app(sf::RenderWindow& win)
 						"Hard mutation stddev", &mutator.settings.bias_hard_mutation_factor, 0.01, 0.1, "%.3f");
 					ImGui::SliderFloat(
 						"Hard mutation chance", &mutator.settings.bias_hard_mutation_chance, 0.00, 0.99, "%.3f");
+					ImGui::PopID();
 					ImGui::Separator();
 
 					ImGui::Text("Weight");
+					ImGui::PushID("Weight");
 					ImGui::InputFloat("Initial stddev", &mutator.settings.weight_initial_std_dev, 0.01, 0.1, "%.3f");
 					ImGui::InputFloat(
 						"Soft mutation stddev", &mutator.settings.weight_mutation_factor, 0.01, 0.1, "%.3f");
@@ -451,19 +458,24 @@ int app(sf::RenderWindow& win)
 						"Hard mutation stddev", &mutator.settings.weight_hard_mutation_factor, 0.01, 0.1, "%.3f");
 					ImGui::SliderFloat(
 						"Hard mutation chance", &mutator.settings.weight_hard_mutation_chance, 0.00, 0.99, "%.3f");
+					ImGui::PopID();
 					ImGui::Separator();
 
 					ImGui::Text("Neuron creation");
+					ImGui::PushID("Neuron");
 					ImGui::SliderFloat("Chance", &mutator.settings.neuron_creation_chance, 0.00, 0.99, "%.3f");
 					ImGui::SliderFloat(
 						"Extra synapse chance", &mutator.settings.extra_synapse_connection_chance, 0.00, 0.99, "%.3f");
+					ImGui::PopID();
 					ImGui::Separator();
 
 					ImGui::Text("Network simplifier");
+					ImGui::PushID("Net");
 					ImGui::SliderFloat(
-						"Conservative GC chance", &mutator.settings.conservative_gc_chance, 0.00, 0.09, "%.3f");
+						"Conservative GC chance", &mutator.settings.conservative_gc_chance, 0.00, 1.0, "%.3f");
 					ImGui::SliderFloat(
-						"Aggressive GC chance", &mutator.settings.aggressive_gc_chance, 0.00, 0.09, "%.3f");
+						"Aggressive GC chance", &mutator.settings.aggressive_gc_chance, 0.00, 1.0, "%.3f");
+					ImGui::PopID();
 					ImGui::Separator();
 
 					ImGui::SliderInt("Survivors per round", &mutator.settings.round_survivors, 1, 30);

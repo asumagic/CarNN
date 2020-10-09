@@ -44,6 +44,10 @@ struct MutatorSettings
 
 	std::int32_t round_survivors = 10;
 
+	bool load_from_file();
+	bool save();
+	void load_defaults();
+
 	template<class Archive>
 	void serialize(Archive& ar)
 	{
