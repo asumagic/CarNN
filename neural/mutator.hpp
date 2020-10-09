@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cereal/cereal.hpp>
 #include <cstddef>
 #include <vector>
 
@@ -39,7 +40,33 @@ struct MutatorSettings
 	double conservative_gc_chance = 0.0;
 	double aggressive_gc_chance   = 0.0;
 
-	std::size_t round_survivors = 10;
+	std::uint32_t round_survivors = 10;
+
+	template<class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(CEREAL_NVP(bias_initial_std_dev),
+		   CEREAL_NVP(bias_mutation_factor),
+		   CEREAL_NVP(bias_mutation_chance),
+		   CEREAL_NVP(bias_hard_mutation_factor),
+		   CEREAL_NVP(bias_hard_mutation_chance),
+
+		   CEREAL_NVP(weight_initial_std_dev),
+		   CEREAL_NVP(weight_mutation_factor),
+		   CEREAL_NVP(weight_mutation_chance),
+		   CEREAL_NVP(weight_hard_mutation_factor),
+		   CEREAL_NVP(weight_hard_mutation_chance),
+
+		   CEREAL_NVP(extra_synapse_connection_chance),
+
+		   CEREAL_NVP(neuron_creation_chance),
+		   CEREAL_NVP(synapse_destruction_chance),
+
+		   CEREAL_NVP(conservative_gc_chance),
+		   CEREAL_NVP(aggressive_gc_chance),
+
+		   CEREAL_NVP(round_survivors));
+	}
 };
 
 class Mutator

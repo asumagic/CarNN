@@ -9,6 +9,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <cereal/archives/binary.hpp>
+#include <cereal/archives/json.hpp>
 #include <cereal/types/vector.hpp>
 #include <fmt/core.h>
 #include <fstream>
@@ -100,6 +101,11 @@ int app(sf::RenderWindow& win)
 	fixdef.filter.groupIndex = -1;
 
 	Mutator mutator;
+	{
+		std::ifstream            os("mutator.json", std::ios::binary);
+		cereal::JSONInputArchive ar(os);
+		mutator.settings.serialize(ar);
+	}
 
 	std::vector<Car*>    cars;
 	std::vector<Network> networks;
