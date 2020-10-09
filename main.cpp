@@ -154,7 +154,7 @@ int app(sf::RenderWindow& win)
 		inputs[1].label = "vector to objective (y)";
 		inputs[2].label = "velocity (forward)";
 		inputs[3].label = "velocity (lateral)";
-		for (int i = 4; i < inputs.size(); ++i)
+		for (std::size_t i = 4; i < inputs.size(); ++i)
 		{
 			inputs[i].label = fmt::format("lidar #{}", i - 4 + 1);
 		}
