@@ -195,19 +195,6 @@ int app(sf::RenderWindow& win)
 	bool        fast_simulation = false;
 	std::size_t ticks           = 0;
 
-	sf::Text car_info;
-	car_info.setFont(infofnt);
-	car_info.setFillColor(sf::Color::White);
-	car_info.setCharacterSize(20);
-	car_info.setPosition(16.f, 16.f);
-	car_info.setStyle(sf::Text::Bold);
-
-	sf::Text fps_info;
-	fps_info.setFont(infofnt);
-	fps_info.setFillColor(sf::Color{80, 80, 80});
-	fps_info.setCharacterSize(20);
-	fps_info.setStyle(sf::Text::Bold);
-
 	float highest_fitness    = 0.0f;
 	float fitness_stall_time = 0.0f;
 
@@ -391,20 +378,20 @@ int app(sf::RenderWindow& win)
 
 			Visualizer{top_network}.display(win, infofnt);
 
-			car_info.setString(fmt::format(
-				"Generation #{}\n"
-				"Speed: {:.1f}km/h\n"
-				"Fitness: {:.0f}\n",
-				mutator.current_generation,
-				top_car.forward_velocity().Length() * 20.0f,
-				top_car.fitness()));
+			if (ImGui::Begin("Simulation state"))
+			{
+				ImGui::Text("%s", fmt::format("{:.1f}ups", 1.0f / real_dt).c_str());
 
-			fps_info.setString(fmt::format("{:.1f}ups", 1.0f / real_dt));
+				if (fast_simulation)
+				{
+					ImGui::SameLine();
+					ImGui::TextColored(ImVec4(1.0, 0.0, 0.0, 1.0), "FAST SIMULATION (press F to toggle)");
+				}
 
-			fps_info.setPosition(8.f, win.getView().getSize().y - 32.f);
-
-			win.draw(car_info);
-			win.draw(fps_info);
+				ImGui::Text("%s", fmt::format("Generation #{}", mutator.current_generation).c_str());
+				ImGui::Text("%s", fmt::format("Top car fitness: {}", top_car.fitness()).c_str());
+			}
+			ImGui::End();
 
 			win.setView(cview);
 
