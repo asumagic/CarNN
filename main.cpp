@@ -1,6 +1,7 @@
 #include "entities/car.hpp"
 #include "entities/checkpoint.hpp"
 #include "entities/wheel.hpp"
+#include "imgui.h"
 #include "neural/mutator.hpp"
 #include "neural/network.hpp"
 #include "neural/visualizer.hpp"
@@ -13,6 +14,7 @@
 #include <cereal/types/vector.hpp>
 #include <fmt/core.h>
 #include <fstream>
+#include <imgui-SFML.h>
 #include <iostream>
 #include <json/reader.h>
 #include <json/value.h>
@@ -288,7 +290,10 @@ int app(sf::RenderWindow& win)
 			}
 		}
 
-		float real_dt = dtclock.restart().asSeconds();
+		sf::Time time = dtclock.restart();
+		ImGui::SFML::Update(win, time);
+
+		float real_dt = time.asSeconds();
 		w.set_dt(1.0f / 30.0f);
 		w.step(speed, 1, 1).update();
 
@@ -316,6 +321,8 @@ int app(sf::RenderWindow& win)
 		{
 			for (sf::Event ev; win.pollEvent(ev);)
 			{
+				ImGui::SFML::ProcessEvent(ev);
+
 				switch (ev.type)
 				{
 				case sf::Event::Closed: win.close(); break;
@@ -401,6 +408,8 @@ int app(sf::RenderWindow& win)
 
 			win.setView(cview);
 
+			ImGui::SFML::Render(win);
+
 			win.display();
 		}
 	}
@@ -414,6 +423,7 @@ int main()
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 4;
 	sf::RenderWindow win{sf::VideoMode{800, 600}, "Neural Network", sf::Style::Default, settings};
+	ImGui::SFML::Init(win);
 
 	while (app(win) == 2)
 		;
