@@ -451,7 +451,7 @@ int app(sf::RenderWindow& win)
 					ImGui::Text("Activation method");
 					ImGui::PushID("Activation method");
 					ImGui::SliderFloat(
-						"Mutation chance", &mutator.settings.activation_mutation_chance, 0.01, 0.99, "%.3f");
+						"Mutation chance", &mutator.settings.activation_mutation_chance, 0.00, 0.99, "%.3f");
 					ImGui::PopID();
 					ImGui::Separator();
 
@@ -465,6 +465,8 @@ int app(sf::RenderWindow& win)
 
 					ImGui::Text("Network simplifier");
 					ImGui::PushID("Net");
+					ImGui::SliderFloat(
+						"Synapse destruction chance", &mutator.settings.synapse_destruction_chance, 0.00, 0.99, "%.3f");
 					ImGui::SliderFloat(
 						"Conservative GC chance", &mutator.settings.conservative_gc_chance, 0.00, 1.0, "%.3f");
 					ImGui::SliderFloat(

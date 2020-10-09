@@ -77,9 +77,9 @@ struct MutatorSettings
 
 		   CEREAL_NVP(activation_mutation_chance),
 
+		   CEREAL_NVP(neuron_creation_chance),
 		   CEREAL_NVP(extra_synapse_connection_chance),
 
-		   CEREAL_NVP(neuron_creation_chance),
 		   CEREAL_NVP(synapse_destruction_chance),
 
 		   CEREAL_NVP(conservative_gc_chance),
