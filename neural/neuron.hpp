@@ -12,6 +12,7 @@ enum class ActivationMethod
 {
 	Sigmoid,
 	LeakyRelu,
+	Sin,
 
 	Total
 };

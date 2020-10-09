@@ -198,9 +198,6 @@ int app(sf::RenderWindow& win)
 	bool        fast_simulation = false;
 	std::size_t ticks           = 0;
 
-	float highest_fitness    = 0.0f;
-	float fitness_stall_time = 0.0f;
-
 	while (win.isOpen())
 	{
 		auto top_car_it = std::max_element(
@@ -289,19 +286,9 @@ int app(sf::RenderWindow& win)
 		++ticks;
 		total_time += w.dt();
 
-		fitness_stall_time += w.dt();
-		if (top_car.fitness() > highest_fitness + 10.0f)
-		{
-			highest_fitness    = top_car.fitness();
-			fitness_stall_time = 0.0f;
-		}
-
-		if (total_time > 60.0f * 5.0f || fitness_stall_time > 40.0f)
+		if (total_time > 60.0f * 5.0f)
 		{
 			mutate();
-
-			highest_fitness    = 0.0f;
-			fitness_stall_time = 0.0f;
 		}
 
 		win.setFramerateLimit(fast_simulation ? 0 : 80);
@@ -458,6 +445,13 @@ int app(sf::RenderWindow& win)
 						"Hard mutation stddev", &mutator.settings.weight_hard_mutation_factor, 0.01, 0.1, "%.3f");
 					ImGui::SliderFloat(
 						"Hard mutation chance", &mutator.settings.weight_hard_mutation_chance, 0.00, 0.99, "%.3f");
+					ImGui::PopID();
+					ImGui::Separator();
+
+					ImGui::Text("Activation method");
+					ImGui::PushID("Activation method");
+					ImGui::SliderFloat(
+						"Mutation chance", &mutator.settings.activation_mutation_chance, 0.01, 0.99, "%.3f");
 					ImGui::PopID();
 					ImGui::Separator();
 

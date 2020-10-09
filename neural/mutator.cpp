@@ -198,6 +198,12 @@ void Mutator::mutate(Network& network)
 		synapse.weight = random_gauss_double(synapse.weight, settings.weight_hard_mutation_factor);
 	}
 
+	while (random_bool(settings.activation_mutation_chance))
+	{
+		auto& neuron             = network.neuron(network.random_neuron(0, 2));
+		neuron.activation_method = random_activation_method();
+	}
+
 	while (random_bool(settings.neuron_creation_chance))
 	{
 		create_random_neuron(network);
@@ -220,11 +226,26 @@ void Mutator::mutate(Network& network)
 
 void Mutator::randomize(Network& network)
 {
+	// const InitialTopology method = InitialTopology(random_int(0, int(InitialTopology::Total) - 1));
+	const auto method = InitialTopology::FullyConnected;
+
 	for (auto& layer : network.layers)
 	{
 		for (auto& neuron : layer.neurons)
 		{
 			randomize(neuron);
+
+			if (method == InitialTopology::PartiallyConnected)
+			{
+				neuron.synapses.erase(
+					std::remove_if(
+						neuron.synapses.begin(), neuron.synapses.end(), [&](const auto&) { return random_bool(0.7); }),
+					neuron.synapses.end());
+			}
+			else if (method == InitialTopology::DisconnectedWithRandomNeurons)
+			{
+				neuron.synapses.clear();
+			}
 
 			for (auto& synapse : neuron.synapses)
 			{
@@ -232,17 +253,43 @@ void Mutator::randomize(Network& network)
 			}
 		}
 	}
+
+	if (method == InitialTopology::DisconnectedWithRandomNeurons)
+	{
+		const std::size_t count = random_int(2, 20);
+		for (std::size_t i = 0; i < count; ++i)
+		{
+			create_random_neuron(network);
+		}
+	}
 }
 
 void Mutator::randomize(Neuron& neuron)
 {
 	neuron.bias              = random_gauss_double(0.0, settings.bias_initial_std_dev);
-	neuron.activation_method = ActivationMethod(random_int(0, int(ActivationMethod::Total) - 1));
+	neuron.activation_method = ActivationMethod::Sigmoid;
 }
 
 void Mutator::randomize(Synapse& synapse)
 {
 	synapse.weight = random_gauss_double(0.0, settings.weight_initial_std_dev);
+}
+
+ActivationMethod Mutator::random_activation_method()
+{
+	const double x = random_double();
+
+	if (x < 0.6)
+	{
+		return ActivationMethod::Sigmoid;
+	}
+
+	if (x < 0.97)
+	{
+		return ActivationMethod::LeakyRelu;
+	}
+
+	return ActivationMethod::Sin;
 }
 
 void Mutator::gc(Network& network, bool aggressive)

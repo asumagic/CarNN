@@ -1,5 +1,6 @@
 #pragma once
 
+#include "neuron.hpp"
 #include <cereal/cereal.hpp>
 #include <cstddef>
 #include <vector>
@@ -18,6 +19,15 @@ struct NetworkResult
 	bool operator>(const NetworkResult& other) const;
 };
 
+enum class InitialTopology
+{
+	FullyConnected,
+	PartiallyConnected,
+	DisconnectedWithRandomNeurons,
+
+	Total
+};
+
 struct MutatorSettings
 {
 	using Fp = float;
@@ -33,6 +43,8 @@ struct MutatorSettings
 	Fp weight_mutation_chance      = 0.7;
 	Fp weight_hard_mutation_factor = 0.2;
 	Fp weight_hard_mutation_chance = 0.2;
+
+	Fp activation_mutation_chance = 0.3;
 
 	Fp neuron_creation_chance          = 0.1;
 	Fp extra_synapse_connection_chance = 0.5;
@@ -62,6 +74,8 @@ struct MutatorSettings
 		   CEREAL_NVP(weight_mutation_chance),
 		   CEREAL_NVP(weight_hard_mutation_factor),
 		   CEREAL_NVP(weight_hard_mutation_chance),
+
+		   CEREAL_NVP(activation_mutation_chance),
 
 		   CEREAL_NVP(extra_synapse_connection_chance),
 
@@ -98,6 +112,8 @@ class Mutator
 	void randomize(Network& network);
 	void randomize(Neuron& neuron);
 	void randomize(Synapse& synapse);
+
+	ActivationMethod random_activation_method();
 
 	void gc(Network& network, bool aggressive);
 };

@@ -71,7 +71,7 @@ void Visualizer::display(sf::RenderTarget& target, sf::Font& font)
 				label += fmt::format("{}\n", neuron.label);
 			}
 
-			const std::array<const char*, 3> activation_method_names{"sigmoid", "leaky RELU", "wth"};
+			const std::array<const char*, 3> activation_method_names{"sigmoid", "leaky RELU", "sin"};
 
 			label += fmt::format(
 				"{}\nbias: {:.01f}", activation_method_names[int(neuron.activation_method)], neuron.bias);
