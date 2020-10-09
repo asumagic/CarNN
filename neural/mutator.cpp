@@ -3,6 +3,7 @@
 #include "../entities/car.hpp"
 #include "../neural/network.hpp"
 #include "../randomutil.hpp"
+#include <spdlog/spdlog.h>
 
 bool NetworkResult::operator<(const NetworkResult& other) const { return car->fitness() < other.car->fitness(); }
 
@@ -73,6 +74,12 @@ void Mutator::darwin(std::vector<NetworkResult> results)
 
 	if (new_max_fitness >= max_fitness + fitness_evolution_threshold)
 	{
+		spdlog::info(
+			"Found new generation: fitness {:.1f} exceeds old max {:.1f}, entering generation {}",
+			new_max_fitness,
+			max_fitness,
+			current_generation + 1);
+
 		max_fitness = new_max_fitness;
 		++current_generation;
 
@@ -101,8 +108,6 @@ void Mutator::darwin(std::vector<NetworkResult> results)
 			mutate(*result.network);
 		}
 	}
-
-	fprintf(stderr, "%f;%d\n", new_max_fitness, int(current_generation));
 }
 
 void Mutator::create_random_neuron(Network& network)
