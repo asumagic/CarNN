@@ -47,6 +47,8 @@ class Body
 
 	Body& with_color(const sf::Color c);
 
+	World& world();
+
 	b2Body&    get();
 	b2BodyDef& definition();
 

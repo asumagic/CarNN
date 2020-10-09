@@ -38,6 +38,8 @@ class World
 
 	b2World& get();
 
+	std::size_t body_count() const { return _bodies.size(); }
+
 	private:
 	std::vector<std::unique_ptr<Body>> _bodies;
 

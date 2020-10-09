@@ -9,6 +9,7 @@ class Checkpoint;
 class Network;
 class Wheel;
 class World;
+class SimulationUnit;
 
 enum AxonControl : size_t
 {
@@ -61,6 +62,8 @@ class Car : public Body
 
 	bool top_of_generation = false;
 	bool dead              = false;
+
+	SimulationUnit* unit = nullptr; // TODO: make this less garbage
 
 	private:
 	std::array<sf::Vertex, total_rays * 2> _rays{};

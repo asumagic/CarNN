@@ -6,6 +6,7 @@
 #include "neural/network.hpp"
 #include "neural/visualizer.hpp"
 #include "randomutil.hpp"
+#include "simulationunit.hpp"
 #include "world.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
@@ -22,11 +23,12 @@ struct GuiWindows
 {
 	bool simulation_open = false;
 	bool mutator_open    = false;
+	bool draw_neural     = false;
 };
 
 int app(sf::RenderWindow& win)
 {
-	World w;
+	Simulation sim;
 
 	GuiWindows windows;
 
@@ -37,9 +39,13 @@ int app(sf::RenderWindow& win)
 
 	Body*                   wall_body;
 	b2Vec2                  car_pos;
-	std::vector<sf::Vertex> wall_vertices = w.import_map(root["filepath"].asString(), wall_body, car_pos);
+	std::vector<sf::Vertex> wall_vertices
+		= sim.units[0].world.import_map(root["filepath"].asString(), wall_body, car_pos);
 
-	std::vector<Checkpoint*> checkpoints;
+	for (std::size_t i = 1; i < sim.units.size(); ++i)
+	{
+		sim.units[i].world.import_map(root["filepath"].asString(), wall_body, car_pos);
+	}
 
 	b2BodyDef cp_bdef;
 	cp_bdef.type = b2_staticBody;
@@ -76,12 +82,15 @@ int app(sf::RenderWindow& win)
 			cp_fdef.shape    = &cp_shape;
 			cp_fdef.isSensor = true;
 
-			Checkpoint& cpb = w.add_body<Checkpoint>(cp_bdef);
-			cpb.origin      = center;
-			cpb.id          = i++;
-			cpb.add_fixture(cp_fdef);
+			for (SimulationUnit& unit : sim.units)
+			{
+				Checkpoint& cpb = unit.world.add_body<Checkpoint>(cp_bdef);
+				cpb.origin      = center;
+				cpb.id          = i++;
+				cpb.add_fixture(cp_fdef);
 
-			checkpoints.push_back(&cpb);
+				unit.checkpoints.push_back(&cpb);
+			}
 		}
 	}
 
@@ -149,9 +158,11 @@ int app(sf::RenderWindow& win)
 		reset();
 	};
 
-	for (std::size_t i = 0; i < 100; ++i)
+	for (std::size_t i = 0; i < 24 * 5; ++i)
 	{
-		Car& car = w.add_body<Car>(bdef);
+		SimulationUnit& unit = sim.optimal_unit();
+		Car&            car  = unit.world.add_body<Car>(bdef);
+		car.unit             = &unit;
 		cars.push_back(&car);
 
 		car.with_color(sf::Color{200, 50, 0, 50}).add_fixture(fixdef);
@@ -182,7 +193,10 @@ int app(sf::RenderWindow& win)
 
 	// Add the listener AFTER moving the car
 	CarCheckpointListener listener;
-	w.get().SetContactListener(&listener);
+	for (SimulationUnit& unit : sim.units)
+	{
+		unit.world.get().SetContactListener(&listener);
+	}
 
 	// Define the time data (delta time + simulation speed)
 	sf::Clock dtclock;
@@ -218,7 +232,7 @@ int app(sf::RenderWindow& win)
 				continue;
 			}
 
-			c.set_target_checkpoint(checkpoints[c.reached_checkpoints() % checkpoints.size()]);
+			c.set_target_checkpoint(c.unit->checkpoints.at(c.reached_checkpoints() % c.unit->checkpoints.size()));
 
 			c.compute_raycasts(*wall_body);
 
@@ -226,7 +240,7 @@ int app(sf::RenderWindow& win)
 			net.update();
 			const auto& results = net.outputs();
 
-			if (false)
+			/*if (false)
 			{
 				if (sf::Joystick::isConnected(0))
 				{
@@ -266,7 +280,7 @@ int app(sf::RenderWindow& win)
 
 				c.set_drift(drift ? 1.0f : 0.0f);
 			}
-			else
+			else*/
 			{
 				c.set_drift(static_cast<float>(results.neurons[Axon_Drift].value));
 				c.steer(static_cast<float>(
@@ -280,11 +294,17 @@ int app(sf::RenderWindow& win)
 		sf::Time time = dtclock.restart();
 
 		float real_dt = time.asSeconds();
-		w.set_dt(1.0f / 30.0f);
-		w.step(speed, 1, 1).update();
+
+#pragma omp parallel for
+		for (std::size_t i = 0; i < sim.units.size(); ++i)
+		{
+			SimulationUnit& unit = sim.units[i];
+			unit.world.set_dt(1.0f / 30.0f);
+			unit.world.step(speed, 1, 1).update();
+		}
 
 		++ticks;
-		total_time += w.dt();
+		total_time += sim.units[0].world.dt();
 
 		if (total_time > 60.0f * 5.0f)
 		{
@@ -350,10 +370,13 @@ int app(sf::RenderWindow& win)
 			win.clear(sf::Color{20, 20, 20});
 			win.draw(checkpoint_vertices);
 			win.draw(wall_vertices.data(), wall_vertices.size(), sf::Lines);
-			w.render(win);
+			for (auto& unit : sim.units)
+			{
+				unit.world.render(win);
+			}
 
 			const b2Vec2 b2target = top_car.get().GetPosition();
-			w.update_view(win, sf::Vector2f{b2target.x, b2target.y}, czoom);
+			top_car.world().update_view(win, sf::Vector2f{b2target.x, b2target.y}, czoom);
 
 			sf::View cview{win.getView()};
 			float    ui_scale = 1.0f;
@@ -363,7 +386,10 @@ int app(sf::RenderWindow& win)
 				static_cast<float>(win.getSize().x) * ui_scale,
 				static_cast<float>(win.getSize().y) * ui_scale}});
 
-			Visualizer{top_network}.display(win, infofnt);
+			if (windows.draw_neural)
+			{
+				Visualizer{top_network}.display(win, infofnt);
+			}
 
 			if (ImGui::BeginMainMenuBar())
 			{
@@ -375,6 +401,7 @@ int app(sf::RenderWindow& win)
 				{
 					ImGui::MenuItem("Simulation", nullptr, &windows.simulation_open);
 					ImGui::MenuItem("Mutator", nullptr, &windows.mutator_open);
+					ImGui::MenuItem("Network viz", nullptr, &windows.draw_neural);
 					ImGui::EndMenu();
 				}
 

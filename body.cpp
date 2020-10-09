@@ -105,6 +105,8 @@ Body& Body::with_color(const sf::Color c)
 	return *this;
 }
 
+World& Body::world() { return _world; }
+
 b2Body& Body::get() { return *_body; }
 
 b2BodyDef& Body::definition() { return _bdef; }
