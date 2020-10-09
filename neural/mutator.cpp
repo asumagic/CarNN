@@ -75,10 +75,10 @@ void Mutator::darwin(std::vector<NetworkResult> results)
 	if (new_max_fitness >= max_fitness + fitness_evolution_threshold)
 	{
 		spdlog::info(
-			"Found new generation: fitness {:.1f} exceeds old max {:.1f}, entering generation {}",
+			"Entering generation {}: fitness {:.1f} exceeds old max {:.1f}",
+			current_generation + 1,
 			new_max_fitness,
-			max_fitness,
-			current_generation + 1);
+			max_fitness);
 
 		max_fitness = new_max_fitness;
 		++current_generation;
@@ -94,6 +94,13 @@ void Mutator::darwin(std::vector<NetworkResult> results)
 			results[i].car->with_color(sf::Color{0, 0, 100, 70});
 			results[i].car->top_of_generation = false;
 		}
+	}
+	else
+	{
+		spdlog::info(
+			"Did not enter new generation: fitness {:.1f} does not exceed old max {:.1f}",
+			new_max_fitness,
+			max_fitness);
 	}
 
 	for (auto& result : results)
