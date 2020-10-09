@@ -267,7 +267,7 @@ void Mutator::randomize(Network& network)
 void Mutator::randomize(Neuron& neuron)
 {
 	neuron.bias              = random_gauss_double(0.0, settings.bias_initial_std_dev);
-	neuron.activation_method = ActivationMethod::Sigmoid;
+	neuron.activation_method = ActivationMethod::LeakyRelu;
 }
 
 void Mutator::randomize(Synapse& synapse)
