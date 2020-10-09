@@ -5,7 +5,10 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG")
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17 -fopenmp")
 
-link_libraries(box2d sfml-system sfml-window sfml-graphics jsoncpp fmt)
+find_package(SFML 2 COMPONENTS graphics REQUIRED)
+find_package(jsoncpp CONFIG REQUIRED)
+find_package(unofficial-box2d CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
 	entities/car.cpp
@@ -19,4 +22,12 @@ add_executable(${PROJECT_NAME}
 	main.cpp
 	randomutil.cpp
 	world.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+	jsoncpp_static
+	sfml-graphics
+	GL # required because of sfml/vcpkg being dumbasses
+	unofficial::box2d::box2d
+	fmt
 )
