@@ -323,10 +323,6 @@ int app(sf::RenderWindow& win)
 					{
 						return 2;
 					}
-					else if (ev.key.code == sf::Keyboard::M)
-					{
-						mutate();
-					}
 					else if (ev.key.code == sf::Keyboard::F)
 					{
 						fast_simulation = !fast_simulation;
@@ -378,7 +374,7 @@ int app(sf::RenderWindow& win)
 
 			Visualizer{top_network}.display(win, infofnt);
 
-			if (ImGui::Begin("Simulation state"))
+			if (ImGui::Begin("Simulation"))
 			{
 				ImGui::Text("%s", fmt::format("{:.1f}ups", 1.0f / real_dt).c_str());
 
@@ -390,6 +386,20 @@ int app(sf::RenderWindow& win)
 
 				ImGui::Text("%s", fmt::format("Generation #{}", mutator.current_generation).c_str());
 				ImGui::Text("%s", fmt::format("Top car fitness: {}", top_car.fitness()).c_str());
+
+				ImGui::Separator();
+
+				ImGui::Text("Simulation controls");
+
+				if (ImGui::Button("Mutate current pop."))
+				{
+					mutate();
+				}
+
+				if (ImGui::Button("Restart current run"))
+				{
+					reset();
+				}
 			}
 			ImGui::End();
 
