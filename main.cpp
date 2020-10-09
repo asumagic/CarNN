@@ -19,9 +19,16 @@
 #include <json/reader.h>
 #include <json/value.h>
 
+struct GuiWindows
+{
+	bool simulation_open = false;
+};
+
 int app(sf::RenderWindow& win)
 {
 	World w;
+
+	GuiWindows windows;
 
 	std::ifstream           race_config{"race.json", std::ios::binary};
 	Json::Value             root;
@@ -278,7 +285,6 @@ int app(sf::RenderWindow& win)
 		}
 
 		sf::Time time = dtclock.restart();
-		ImGui::SFML::Update(win, time);
 
 		float real_dt = time.asSeconds();
 		w.set_dt(1.0f / 30.0f);
@@ -306,6 +312,8 @@ int app(sf::RenderWindow& win)
 
 		if (!fast_simulation || ticks % 60 == 0)
 		{
+			ImGui::SFML::Update(win, time);
+
 			for (sf::Event ev; win.pollEvent(ev);)
 			{
 				ImGui::SFML::ProcessEvent(ev);
@@ -374,34 +382,39 @@ int app(sf::RenderWindow& win)
 
 			Visualizer{top_network}.display(win, infofnt);
 
-			if (ImGui::Begin("Simulation"))
+			if (ImGui::BeginMainMenuBar())
 			{
-				ImGui::Text("%s", fmt::format("{:.1f}ups", 1.0f / real_dt).c_str());
+				ImGui::TextColored(
+					ImVec4(1.0, 1.0, 1.0, 0.5), "%s", fmt::format("CarNN - {:6.1f}ups", 1.0f / real_dt).c_str());
+				ImGui::SameLine();
 
-				if (fast_simulation)
+				if (ImGui::BeginMenu("View"))
 				{
-					ImGui::SameLine();
-					ImGui::TextColored(ImVec4(1.0, 0.0, 0.0, 1.0), "FAST SIMULATION (press F to toggle)");
+					ImGui::MenuItem("Simulation", nullptr, &windows.simulation_open);
+					ImGui::EndMenu();
 				}
 
-				ImGui::Text("%s", fmt::format("Generation #{}", mutator.current_generation).c_str());
-				ImGui::Text("%s", fmt::format("Top car fitness: {}", top_car.fitness()).c_str());
-
-				ImGui::Separator();
-
-				ImGui::Text("Simulation controls");
-
-				if (ImGui::Button("Mutate current pop."))
-				{
-					mutate();
-				}
-
-				if (ImGui::Button("Restart current run"))
-				{
-					reset();
-				}
+				ImGui::EndMainMenuBar();
 			}
-			ImGui::End();
+
+			if (windows.simulation_open)
+			{
+				if (ImGui::Begin("Simulation", &windows.simulation_open))
+				{
+					ImGui::Checkbox("Fast simulation", &fast_simulation);
+
+					if (ImGui::Button("Mutate current pop."))
+					{
+						mutate();
+					}
+
+					if (ImGui::Button("Restart current run"))
+					{
+						reset();
+					}
+				}
+				ImGui::End();
+			}
 
 			win.setView(cview);
 
@@ -424,4 +437,6 @@ int main()
 
 	while (app(win) == 2)
 		;
+
+	ImGui::SFML::Shutdown();
 }
