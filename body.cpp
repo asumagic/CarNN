@@ -87,7 +87,7 @@ b2Fixture& Body::add_fixture(const b2FixtureDef fdef)
 	return *(_body->CreateFixture(&fdef));
 }
 
-Body& Body::with_color(const sf::Color c)
+Body& Body::with_color(const sf::Color c, std::uint8_t outline_alpha)
 {
 	_next_color = c;
 
@@ -97,7 +97,8 @@ Body& Body::with_color(const sf::Color c)
 		shape->setOutlineColor(
 			{static_cast<uint8_t>((255.f * 0.2f) + _next_color.r),
 			 static_cast<uint8_t>((255.f * 0.2f) + _next_color.g),
-			 static_cast<uint8_t>((255.f * 0.2f) + _next_color.b)});
+			 static_cast<uint8_t>((255.f * 0.2f) + _next_color.b),
+			 outline_alpha});
 
 		shape->setOutlineThickness(0.08f);
 	}

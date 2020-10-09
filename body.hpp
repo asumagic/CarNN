@@ -45,7 +45,7 @@ class Body
 
 	b2Fixture& add_fixture(const b2FixtureDef fdef);
 
-	Body& with_color(const sf::Color c);
+	Body& with_color(const sf::Color c, uint8_t outline_alpha = 255);
 
 	World& world();
 

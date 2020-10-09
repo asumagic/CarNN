@@ -112,17 +112,17 @@ int app(sf::RenderWindow& win)
 
 			if (c.dead)
 			{
-				c.with_color(sf::Color{200, 0, 0, 50});
+				c.with_color(sf::Color{200, 0, 0, 60}, 255);
 				continue;
 			}
 
 			if (individuals[i].survivor_from_last)
 			{
-				c.with_color(sf::Color{200, 50, 0, 50});
+				c.with_color(sf::Color{200, 50, 0, 200}, 255);
 			}
 			else
 			{
-				c.with_color(sf::Color{0, 0, 100, 70});
+				c.with_color(sf::Color{0, 0, 100, 40}, 255);
 			}
 
 			c.set_target_checkpoint(c.unit->checkpoints.at(c.reached_checkpoints() % c.unit->checkpoints.size()));
@@ -274,9 +274,9 @@ int app(sf::RenderWindow& win)
 
 			const b2Vec2 b2target = top_car.get().GetPosition();
 			top_car.world().update_view(win, sf::Vector2f{b2target.x, b2target.y}, czoom);
-			/*sf::View view = win.getView();
+			sf::View view = win.getView();
 			view.rotate(top_car.get().GetAngle() * (360.0f / (2.0f * 3.14159265359f)));
-			win.setView(view);*/
+			win.setView(view);
 
 			sf::View cview{win.getView()};
 			float    ui_scale = 1.0f;
