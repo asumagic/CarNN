@@ -25,6 +25,7 @@ add_executable(${PROJECT_NAME}
 	body.cpp
 	main.cpp
 	randomutil.cpp
+	simulationunit.cpp
 	world.cpp
 )
 

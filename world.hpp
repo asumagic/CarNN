@@ -12,7 +12,7 @@ class Body;
 class World
 {
 	public:
-	static constexpr float world_scale = 5.0f;
+	static constexpr float scale = 5.0f;
 
 	World(const b2Vec2 gravity = b2Vec2{0, 0});
 
@@ -24,9 +24,6 @@ class World
 	float dt() const;
 
 	void update_view(sf::RenderTarget& target, sf::Vector2f origin, float czoom);
-
-	// changes bodies
-	std::vector<sf::Vertex> import_map(const std::string fname, Body*& wall, b2Vec2& car_origin);
 
 	template<typename T = Body>
 	T& add_body(const b2BodyDef bdef)

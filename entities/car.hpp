@@ -60,8 +60,7 @@ class Car : public Body
 
 	void update_inputs(Network& n);
 
-	bool top_of_generation = false;
-	bool dead              = false;
+	bool dead = false;
 
 	SimulationUnit* unit = nullptr; // TODO: make this less garbage
 

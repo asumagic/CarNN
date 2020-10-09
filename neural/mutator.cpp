@@ -3,13 +3,11 @@
 #include "../entities/car.hpp"
 #include "../neural/network.hpp"
 #include "../randomutil.hpp"
+#include "../simulationunit.hpp"
+#include "individual.hpp"
 #include <cereal/archives/json.hpp>
 #include <fstream>
 #include <spdlog/spdlog.h>
-
-bool NetworkResult::operator<(const NetworkResult& other) const { return car->fitness() < other.car->fitness(); }
-
-bool NetworkResult::operator>(const NetworkResult& other) const { return car->fitness() > other.car->fitness(); }
 
 Network Mutator::cross(const Network& a, const Network& b)
 {
@@ -69,10 +67,13 @@ Network Mutator::cross(const Network& a, const Network& b)
 	return ret;
 }
 
-void Mutator::darwin(std::vector<NetworkResult> results)
+void Mutator::darwin(Simulation& sim, std::vector<Individual>& individuals)
 {
-	std::sort(results.begin(), results.end(), std::greater{});
-	float new_max_fitness = results[0].car->fitness();
+	std::sort(individuals.begin(), individuals.end(), [&](const Individual& a, const Individual& b) {
+		return sim.cars[a.car_id]->fitness() > sim.cars[b.car_id]->fitness();
+	});
+
+	float new_max_fitness = sim.cars.at(individuals[0].car_id)->fitness();
 
 	if (new_max_fitness >= max_fitness + fitness_evolution_threshold)
 	{
@@ -87,14 +88,12 @@ void Mutator::darwin(std::vector<NetworkResult> results)
 
 		for (std::size_t i = 0; i < settings.round_survivors; ++i)
 		{
-			results[i].car->with_color(sf::Color{200, 50, 0, 50});
-			results[i].car->top_of_generation = true;
+			individuals[i].survivor_from_last = true;
 		}
 
-		for (std::size_t i = settings.round_survivors; i < results.size(); ++i)
+		for (std::size_t i = settings.round_survivors; i < individuals.size(); ++i)
 		{
-			results[i].car->with_color(sf::Color{0, 0, 100, 70});
-			results[i].car->top_of_generation = false;
+			individuals[i].survivor_from_last = false;
 		}
 	}
 	else
@@ -105,16 +104,16 @@ void Mutator::darwin(std::vector<NetworkResult> results)
 			max_fitness);
 	}
 
-	for (auto& result : results)
+	for (auto& individual : individuals)
 	{
-		if (!result.car->top_of_generation)
+		if (!individual.survivor_from_last)
 		{
 			// TODO: this allows self breeding, do we allow it?
-			*result.network = cross(
-				*results[random_int(0, settings.round_survivors - 1)].network,
-				*results[random_int(0, settings.round_survivors - 1)].network);
+			individual.network = cross(
+				individuals[random_int(0, settings.round_survivors - 1)].network,
+				individuals[random_int(0, settings.round_survivors - 1)].network);
 
-			mutate(*result.network);
+			mutate(individual.network);
 		}
 	}
 }

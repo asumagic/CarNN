@@ -114,7 +114,8 @@ void Network::reset_values()
 	{
 		for (Neuron& neuron : layer.neurons)
 		{
-			neuron.value = 0.0;
+			neuron.value              = 0.0;
+			neuron.partial_activation = 0.0;
 		}
 	}
 }

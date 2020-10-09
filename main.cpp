@@ -2,6 +2,7 @@
 #include "entities/checkpoint.hpp"
 #include "entities/wheel.hpp"
 #include "imgui.h"
+#include "neural/individual.hpp"
 #include "neural/mutator.hpp"
 #include "neural/network.hpp"
 #include "neural/visualizer.hpp"
@@ -15,9 +16,6 @@
 #include <fmt/core.h>
 #include <fstream>
 #include <imgui-SFML.h>
-#include <iostream>
-#include <json/reader.h>
-#include <json/value.h>
 
 struct GuiWindows
 {
@@ -30,149 +28,27 @@ int app(sf::RenderWindow& win)
 {
 	Simulation sim;
 
+	bool        fast_simulation = false;
+	std::size_t ticks           = 0;
+
 	GuiWindows windows;
-
-	std::ifstream           race_config{"race.json", std::ios::binary};
-	Json::Value             root;
-	Json::CharReaderBuilder reader;
-	Json::parseFromStream(reader, race_config, &root, nullptr);
-
-	Body*                   wall_body;
-	b2Vec2                  car_pos;
-	std::vector<sf::Vertex> wall_vertices
-		= sim.units[0].world.import_map(root["filepath"].asString(), wall_body, car_pos);
-
-	for (std::size_t i = 1; i < sim.units.size(); ++i)
-	{
-		sim.units[i].world.import_map(root["filepath"].asString(), wall_body, car_pos);
-	}
-
-	b2BodyDef cp_bdef;
-	cp_bdef.type = b2_staticBody;
-	sf::VertexArray checkpoint_vertices{sf::Lines};
-	{
-		size_t i = 0;
-		for (const Json::Value& cp : root["checkpoints"])
-		{
-			sf::Vector2f p1{
-				cp["p1"].get(Json::ArrayIndex{0}, 0).asFloat() * 5.f,
-				cp["p1"].get(Json::ArrayIndex{1}, 0).asFloat() * 5.f},
-				p2{cp["p2"].get(Json::ArrayIndex{0}, 0).asFloat() * 5.f,
-				   cp["p2"].get(Json::ArrayIndex{1}, 0).asFloat() * 5.f};
-
-			sf::Vector2f center{p1 + (p2 - p1) / 2.f};
-
-			// Extend the line by 5 pixels each side
-			p1.x += (p1.x > center.x) ? 5.f : -5.f; // @todo compact if possible
-			p2.x += (p2.x > center.x)
-				? 5.f
-				: -5.f; // for (float& x : {p1.x, p2.x} doesn't work since you can't get a reference to both
-			p1.y += (p1.y > center.y) ? 5.f : -5.f;
-			p2.y += (p2.y > center.y) ? 5.f : -5.f;
-
-			const static sf::Color cp_col{0, 127, 0, 100};
-
-			checkpoint_vertices.append(sf::Vertex{p1, cp_col});
-			checkpoint_vertices.append(sf::Vertex{p2, cp_col});
-
-			b2EdgeShape cp_shape;
-			cp_shape.SetTwoSided(b2Vec2{p1.x, p1.y}, b2Vec2{p2.x, p2.y});
-
-			b2FixtureDef cp_fdef;
-			cp_fdef.shape    = &cp_shape;
-			cp_fdef.isSensor = true;
-
-			for (SimulationUnit& unit : sim.units)
-			{
-				Checkpoint& cpb = unit.world.add_body<Checkpoint>(cp_bdef);
-				cpb.origin      = center;
-				cpb.id          = i++;
-				cpb.add_fixture(cp_fdef);
-
-				unit.checkpoints.push_back(&cpb);
-			}
-		}
-	}
-
-	b2BodyDef bdef;
-	bdef.type           = b2_dynamicBody;
-	bdef.angularDamping = 0.01f;
-
-	std::array<b2Vec2, 8> vertices
-		= {{{-1.50f, -0.30f},
-			{-1.00f, -1.90f},
-			{-0.50f, -2.10f},
-			{0.50f, -2.10f},
-			{1.00f, -1.90f},
-			{1.50f, -0.30f},
-			{1.50f, 2.00f},
-			{-1.50f, 2.00f}}};
-
-	b2PolygonShape shape;
-	shape.Set(vertices.data(), vertices.size()); // shape.SetAsBox(1.5f, 2.1f);
-
-	b2FixtureDef fixdef;
-	fixdef.shape             = &shape;
-	fixdef.density           = 100.f;
-	fixdef.friction          = 1.0f;
-	fixdef.restitution       = 0.2f;
-	fixdef.filter.groupIndex = -1;
 
 	Mutator mutator;
 	mutator.settings.load_from_file();
 
-	std::vector<Car*>    cars;
-	std::vector<Network> networks;
+	std::vector<Individual> individuals(sim.cars.size());
 
-	float total_time = 0.0f;
-
-	const auto reset_car = [&](Car& car) {
-		car.transform(car_pos, static_cast<float>(0.5 * M_PI));
-		car.reset();
-	};
-
-	const auto reset = [&] {
-		total_time = 0.0f;
-
-		for (auto& network : networks)
-		{
-			network.reset_values();
-		}
-
-		for (auto& car : cars)
-		{
-			reset_car(*car);
-		}
-	};
-
-	const auto mutate = [&] {
-		std::vector<NetworkResult> results;
-
-		for (std::size_t i = 0; i < cars.size(); ++i)
-		{
-			results.push_back({&networks[i], cars[i]});
-		}
-
-		mutator.darwin(results);
-
-		reset();
-	};
-
-	for (std::size_t i = 0; i < 24 * 5; ++i)
+	for (std::size_t i = 0; i < individuals.size(); ++i)
 	{
-		SimulationUnit& unit = sim.optimal_unit();
-		Car&            car  = unit.world.add_body<Car>(bdef);
-		car.unit             = &unit;
-		cars.push_back(&car);
+		Individual& individual = individuals[i];
 
-		car.with_color(sf::Color{200, 50, 0, 50}).add_fixture(fixdef);
-		car.transform(car_pos, static_cast<float>(0.5 * M_PI));
+		individual.car_id = i;
 
-		auto& last_network = networks.emplace_back(total_rays + 4, 6);
-		mutator.randomize(last_network);
+		individual.network = Network(total_rays + 4, 6);
+		mutator.randomize(individual.network);
 
-		auto& inputs  = last_network.inputs().neurons;
-		auto& outputs = last_network.outputs().neurons;
+		auto& inputs  = individual.network.inputs().neurons;
+		auto& outputs = individual.network.outputs().neurons;
 
 		inputs[0].label = "vector to objective (x)";
 		inputs[1].label = "vector to objective (y)";
@@ -191,12 +67,23 @@ int app(sf::RenderWindow& win)
 		outputs[Axon_Drift].label       = "Drifting";
 	}
 
-	// Add the listener AFTER moving the car
-	CarCheckpointListener listener;
-	for (SimulationUnit& unit : sim.units)
-	{
-		unit.world.get().SetContactListener(&listener);
-	}
+	float total_time = 0.0f;
+
+	const auto reset = [&] {
+		total_time = 0.0f;
+
+		for (auto& individual : individuals)
+		{
+			individual.network.reset_values();
+		}
+
+		ticks = 0;
+	};
+
+	const auto mutate = [&] {
+		mutator.darwin(sim, individuals);
+		reset();
+	};
 
 	// Define the time data (delta time + simulation speed)
 	sf::Clock dtclock;
@@ -209,32 +96,38 @@ int app(sf::RenderWindow& win)
 	if (!infofnt.loadFromFile("Cantarell-Bold.ttf"))
 		std::cerr << "WARNING: Failed to load font." << std::endl;
 
-	bool        fast_simulation = false;
-	std::size_t ticks           = 0;
-
 	while (win.isOpen())
 	{
-		auto top_car_it = std::max_element(
-			cars.begin(), cars.end(), [&](const Car* a, const Car* b) { return a->fitness() < b->fitness(); });
-
-		Car&     top_car     = **top_car_it;
-		Network& top_network = networks[std::distance(cars.begin(), top_car_it)];
+		if (ticks == 0)
+		{
+			sim = {};
+		}
 
 // @TODO move this mess
 #pragma omp parallel for
-		for (std::size_t i = 0; i < cars.size(); ++i)
+		for (std::size_t i = 0; i < individuals.size(); ++i)
 		{
-			Car&     c   = *cars[i];
-			Network& net = networks[i];
+			Car&     c   = *sim.cars[individuals[i].car_id];
+			Network& net = individuals[i].network;
 
 			if (c.dead)
 			{
+				c.with_color(sf::Color{200, 0, 0, 50});
 				continue;
+			}
+
+			if (individuals[i].survivor_from_last)
+			{
+				c.with_color(sf::Color{200, 50, 0, 50});
+			}
+			else
+			{
+				c.with_color(sf::Color{0, 0, 100, 70});
 			}
 
 			c.set_target_checkpoint(c.unit->checkpoints.at(c.reached_checkpoints() % c.unit->checkpoints.size()));
 
-			c.compute_raycasts(*wall_body);
+			c.compute_raycasts(*c.unit->wall);
 
 			c.update_inputs(net);
 			net.update();
@@ -291,6 +184,10 @@ int app(sf::RenderWindow& win)
 			}
 		}
 
+		Individual& top_individual = individuals[0];
+		Car&        top_car        = *sim.cars[top_individual.car_id];
+		Network&    top_network    = top_individual.network;
+
 		sf::Time time = dtclock.restart();
 
 		float real_dt = time.asSeconds();
@@ -346,13 +243,13 @@ int app(sf::RenderWindow& win)
 					{
 						std::ofstream               os("nets.bin", std::ios::binary);
 						cereal::BinaryOutputArchive archive(os);
-						archive(networks);
+						archive(individuals);
 					}
 					else if (ev.key.code == sf::Keyboard::L)
 					{
 						std::ifstream              is("nets.bin", std::ios::binary);
 						cereal::BinaryInputArchive archive(is);
-						archive(networks);
+						archive(individuals);
 
 						mutator = {};
 						reset();
@@ -368,8 +265,8 @@ int app(sf::RenderWindow& win)
 			}
 
 			win.clear(sf::Color{20, 20, 20});
-			win.draw(checkpoint_vertices);
-			win.draw(wall_vertices.data(), wall_vertices.size(), sf::Lines);
+			win.draw(sim.checkpoint_vertices);
+			win.draw(sim.wall_vertices.data(), sim.wall_vertices.size(), sf::Lines);
 			for (auto& unit : sim.units)
 			{
 				unit.world.render(win);

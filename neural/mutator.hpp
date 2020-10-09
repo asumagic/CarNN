@@ -9,15 +9,8 @@ class Network;
 class Car;
 struct Neuron;
 struct Synapse;
-
-struct NetworkResult
-{
-	Network* network;
-	Car*     car;
-
-	bool operator<(const NetworkResult& other) const;
-	bool operator>(const NetworkResult& other) const;
-};
+class Simulation;
+struct Individual;
 
 enum class InitialTopology
 {
@@ -101,7 +94,7 @@ class Mutator
 
 	Network cross(const Network& a, const Network& b);
 
-	void darwin(std::vector<NetworkResult> results); // TODO span
+	void darwin(Simulation& sim, std::vector<Individual>& results);
 
 	void create_random_neuron(Network& network);
 	void create_random_synapse(Network& network);
