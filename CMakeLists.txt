@@ -11,7 +11,9 @@ find_package(ImGui-SFML CONFIG REQUIRED)
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(unofficial-box2d CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 find_package(cereal CONFIG REQUIRED)
+
 add_executable(${PROJECT_NAME}
 	entities/car.cpp
 	entities/checkpoint.cpp
@@ -34,5 +36,6 @@ target_link_libraries(${PROJECT_NAME}
 	GL # required because of sfml/vcpkg being dumbasses
 	unofficial::box2d::box2d
 	fmt
+	spdlog::spdlog
 	cereal
 )
