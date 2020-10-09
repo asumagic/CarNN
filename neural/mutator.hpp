@@ -88,7 +88,7 @@ class Mutator
 	MutatorSettings settings;
 
 	float max_fitness                 = 0.0f;
-	float fitness_evolution_threshold = 50.0f;
+	float fitness_evolution_threshold = 10.0f;
 
 	std::size_t current_generation = 0;
 
