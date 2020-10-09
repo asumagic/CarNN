@@ -134,6 +134,11 @@ int app(sf::RenderWindow& win)
 	const auto reset = [&] {
 		total_time = 0.0f;
 
+		for (auto& network : networks)
+		{
+			network.reset_values();
+		}
+
 		for (auto& car : cars)
 		{
 			reset_car(*car);
@@ -149,11 +154,6 @@ int app(sf::RenderWindow& win)
 		}
 
 		mutator.darwin(results);
-
-		for (auto& network : networks)
-		{
-			network.reset_values();
-		}
 
 		reset();
 	};
@@ -300,7 +300,7 @@ int app(sf::RenderWindow& win)
 		{
 			SimulationUnit& unit = sim.units[i];
 			unit.world.set_dt(1.0f / 30.0f);
-			unit.world.step(speed, 1, 1).update();
+			unit.world.step(speed, 16, 16).update();
 		}
 
 		++ticks;
@@ -377,6 +377,9 @@ int app(sf::RenderWindow& win)
 
 			const b2Vec2 b2target = top_car.get().GetPosition();
 			top_car.world().update_view(win, sf::Vector2f{b2target.x, b2target.y}, czoom);
+			/*sf::View view = win.getView();
+			view.rotate(top_car.get().GetAngle() * (360.0f / (2.0f * 3.14159265359f)));
+			win.setView(view);*/
 
 			sf::View cview{win.getView()};
 			float    ui_scale = 1.0f;

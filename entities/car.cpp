@@ -89,8 +89,9 @@ void Car::reset()
 	_reached_checkpoints = 0;
 	_fitness_bias        = 0.0f;
 	//_net_feedback = 0.0f;
-	_fitness             = 0.0f;
-	_acceleration_factor = 1.0f;
+	_fitness              = 0.0f;
+	_acceleration_factor  = 1.0f;
+	_ray_update_frequency = 0;
 
 	for (Wheel* wheel : _wheels)
 	{
@@ -197,7 +198,7 @@ float Car::fitness() const
 
 	const float scale = 1000.0f;
 
-	_fitness = std::max(_fitness, ((reached_checkpoints() + 1) * scale + normalized_distance * scale * 0.8f));
+	_fitness = ((reached_checkpoints() + 1) * scale + normalized_distance * scale * 0.8f);
 
 	return _fitness + _fitness_bias;
 }
@@ -250,10 +251,10 @@ void Car::compute_raycasts(Body& wall_body)
 	++_ray_update_frequency;
 
 	const size_t ray_count = _rays.size() / 2;
-	const float  radius    = 96.f;
+	const float  radius    = 64.f;
 	for (size_t i = 0; i < ray_count; ++i)
 	{
-		if ((i + _ray_update_frequency) % 4 != 0)
+		if ((i + _ray_update_frequency) % 6 != 0)
 		{
 			continue;
 		}
