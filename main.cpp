@@ -22,6 +22,7 @@
 struct GuiWindows
 {
 	bool simulation_open = false;
+	bool mutator_open    = false;
 };
 
 int app(sf::RenderWindow& win)
@@ -391,6 +392,7 @@ int app(sf::RenderWindow& win)
 				if (ImGui::BeginMenu("View"))
 				{
 					ImGui::MenuItem("Simulation", nullptr, &windows.simulation_open);
+					ImGui::MenuItem("Mutator", nullptr, &windows.mutator_open);
 					ImGui::EndMenu();
 				}
 
@@ -413,6 +415,60 @@ int app(sf::RenderWindow& win)
 						reset();
 					}
 				}
+				ImGui::End();
+			}
+
+			if (windows.mutator_open)
+			{
+				if (ImGui::Begin("Mutator controls", &windows.mutator_open))
+				{
+					/*ImGui::Button("Load");
+					ImGui::SameLine();
+					ImGui::Button("Save");
+					ImGui::SameLine();
+					ImGui::Button("Defaults");
+					ImGui::Separator();*/
+
+					ImGui::Text("Bias");
+					ImGui::InputFloat("Initial stddev", &mutator.settings.bias_initial_std_dev, 0.01, 0.1, "%.3f");
+					ImGui::InputFloat(
+						"Soft mutation stddev", &mutator.settings.bias_mutation_factor, 0.01, 0.1, "%.3f");
+					ImGui::SliderFloat(
+						"Soft mutation chance", &mutator.settings.bias_mutation_chance, 0.00, 0.99, "%.3f");
+					ImGui::InputFloat(
+						"Hard mutation stddev", &mutator.settings.bias_hard_mutation_factor, 0.01, 0.1, "%.3f");
+					ImGui::SliderFloat(
+						"Hard mutation chance", &mutator.settings.bias_hard_mutation_chance, 0.00, 0.99, "%.3f");
+					ImGui::Separator();
+
+					ImGui::Text("Weight");
+					ImGui::InputFloat("Initial stddev", &mutator.settings.weight_initial_std_dev, 0.01, 0.1, "%.3f");
+					ImGui::InputFloat(
+						"Soft mutation stddev", &mutator.settings.weight_mutation_factor, 0.01, 0.1, "%.3f");
+					ImGui::SliderFloat(
+						"Soft mutation chance", &mutator.settings.weight_mutation_chance, 0.00, 0.99, "%.3f");
+					ImGui::InputFloat(
+						"Hard mutation stddev", &mutator.settings.weight_hard_mutation_factor, 0.01, 0.1, "%.3f");
+					ImGui::SliderFloat(
+						"Hard mutation chance", &mutator.settings.weight_hard_mutation_chance, 0.00, 0.99, "%.3f");
+					ImGui::Separator();
+
+					ImGui::Text("Neuron creation");
+					ImGui::SliderFloat("Chance", &mutator.settings.neuron_creation_chance, 0.00, 0.99, "%.3f");
+					ImGui::SliderFloat(
+						"Extra synapse chance", &mutator.settings.extra_synapse_connection_chance, 0.00, 0.99, "%.3f");
+					ImGui::Separator();
+
+					ImGui::Text("Network simplifier");
+					ImGui::SliderFloat(
+						"Conservative GC chance", &mutator.settings.conservative_gc_chance, 0.00, 0.09, "%.3f");
+					ImGui::SliderFloat(
+						"Aggressive GC chance", &mutator.settings.aggressive_gc_chance, 0.00, 0.09, "%.3f");
+					ImGui::Separator();
+
+					ImGui::SliderInt("Survivors per round", &mutator.settings.round_survivors, 1, 30);
+				}
+
 				ImGui::End();
 			}
 

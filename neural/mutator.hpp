@@ -20,27 +20,29 @@ struct NetworkResult
 
 struct MutatorSettings
 {
-	double bias_initial_std_dev      = 0.05;
-	double bias_mutation_factor      = 0.07;
-	double bias_mutation_chance      = 0.7;
-	double bias_hard_mutation_factor = 0.2;
-	double bias_hard_mutation_chance = 0.2;
+	using Fp = float;
 
-	double weight_initial_std_dev      = 0.05;
-	double weight_mutation_factor      = 0.07;
-	double weight_mutation_chance      = 0.7;
-	double weight_hard_mutation_factor = 0.2;
-	double weight_hard_mutation_chance = 0.2;
+	Fp bias_initial_std_dev      = 0.05;
+	Fp bias_mutation_factor      = 0.07;
+	Fp bias_mutation_chance      = 0.7;
+	Fp bias_hard_mutation_factor = 0.2;
+	Fp bias_hard_mutation_chance = 0.2;
 
-	double extra_synapse_connection_chance = 0.5;
+	Fp weight_initial_std_dev      = 0.05;
+	Fp weight_mutation_factor      = 0.07;
+	Fp weight_mutation_chance      = 0.7;
+	Fp weight_hard_mutation_factor = 0.2;
+	Fp weight_hard_mutation_chance = 0.2;
 
-	double neuron_creation_chance     = 0.1;
-	double synapse_destruction_chance = 0.1;
+	Fp neuron_creation_chance          = 0.1;
+	Fp extra_synapse_connection_chance = 0.5;
 
-	double conservative_gc_chance = 0.0;
-	double aggressive_gc_chance   = 0.0;
+	Fp synapse_destruction_chance = 0.1;
 
-	std::uint32_t round_survivors = 10;
+	Fp conservative_gc_chance = 0.0;
+	Fp aggressive_gc_chance   = 0.0;
+
+	std::int32_t round_survivors = 10;
 
 	template<class Archive>
 	void serialize(Archive& ar)
