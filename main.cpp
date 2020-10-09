@@ -274,9 +274,9 @@ int app(sf::RenderWindow& win)
 
 			const b2Vec2 b2target = top_car.get().GetPosition();
 			top_car.world().update_view(win, sf::Vector2f{b2target.x, b2target.y}, czoom);
-			sf::View view = win.getView();
+			/*sf::View view = win.getView();
 			view.rotate(top_car.get().GetAngle() * (360.0f / (2.0f * 3.14159265359f)));
-			win.setView(view);
+			win.setView(view);*/
 
 			sf::View cview{win.getView()};
 			float    ui_scale = 1.0f;
