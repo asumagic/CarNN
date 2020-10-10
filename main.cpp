@@ -93,7 +93,7 @@ int app(sf::RenderWindow& win)
 	float czoom = 0.1f;
 
 	sf::Font infofnt;
-	if (!infofnt.loadFromFile("Cantarell-Bold.ttf"))
+	if (!infofnt.loadFromFile("Tamzen8x16r.ttf"))
 		std::cerr << "WARNING: Failed to load font." << std::endl;
 
 	while (win.isOpen())
@@ -424,7 +424,15 @@ int main()
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 4;
 	sf::RenderWindow win{sf::VideoMode{800, 600}, "Neural Network", sf::Style::Default, settings};
-	ImGui::SFML::Init(win);
+	ImGui::SFML::Init(win, false);
+
+	{
+		auto& io = ImGui::GetIO();
+		io.Fonts->AddFontFromFileTTF("Tamzen8x16r.ttf", 16.0f);
+		io.Fonts->AddFontFromFileTTF("Tamzen8x16b.ttf", 16.0f);
+
+		ImGui::SFML::UpdateFontTexture();
+	}
 
 	while (app(win) == 2)
 		;

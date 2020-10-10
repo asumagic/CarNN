@@ -78,7 +78,7 @@ void Visualizer::display(sf::RenderTarget& target, sf::Font& font)
 
 			sf::Text text;
 			text.setFont(font);
-			text.setCharacterSize(12);
+			text.setCharacterSize(16);
 			text.setPosition(origin);
 			text.setString(label);
 			target.draw(text);
@@ -99,6 +99,6 @@ sf::Vector2f Visualizer::neuron_offset(NeuronId id)
 	}
 
 	return {
-		float(id.layer()) * layer_padding + jitter,
-		float(id.neuron_in_layer()) / float(_network->layers[id.layer()].neurons.size()) * neuron_area};
+		std::round(float(id.layer()) * layer_padding + jitter),
+		std::round(float(id.neuron_in_layer()) / float(_network->layers[id.layer()].neurons.size()) * neuron_area)};
 }
