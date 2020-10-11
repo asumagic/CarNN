@@ -246,6 +246,25 @@ void Car::transform(const b2Vec2 pos, const float angle)
 		wheel->get().SetTransform(pos, angle);
 }
 
+class RayCastCallback : public b2RayCastCallback
+{
+	public:
+	float ReportFixture(
+		b2Fixture* fixture, [[maybe_unused]] const b2Vec2& point, [[maybe_unused]] const b2Vec2& normal, float fraction)
+	{
+		auto* data = static_cast<BodyUserData*>(fixture->GetBody()->GetUserData());
+		if (data->type == BodyType::BodyWall)
+		{
+			closest_fraction = fraction;
+			return fraction;
+		}
+
+		return -1;
+	}
+
+	float closest_fraction = 1.0f;
+};
+
 void Car::compute_raycasts(Body& wall_body)
 {
 	++_ray_update_frequency;
@@ -261,37 +280,30 @@ void Car::compute_raycasts(Body& wall_body)
 
 		float rad_angle = _body->GetAngle() - (float(i) / float(ray_count - 1)) * float(M_PI);
 
-		b2RayCastInput rin;
-		rin.p1          = _body->GetPosition();
-		rin.p2          = b2Vec2(rin.p1.x + (cos(rad_angle) * radius), rin.p1.y + (sin(rad_angle) * radius));
-		rin.maxFraction = 1.f;
+		const b2Vec2 p1 = _body->GetPosition();
+		const b2Vec2 p2 = b2Vec2(p1.x + (cos(rad_angle) * radius), p1.y + (sin(rad_angle) * radius));
 
-		float closest_frac = 1.f;
-		for (b2Fixture* f = wall_body.get().GetFixtureList(); f; f = f->GetNext())
-		{
-			b2RayCastOutput rout;
-			if (f->RayCast(&rout, rin, 0) && rout.fraction < closest_frac)
-				closest_frac = rout.fraction;
-		}
+		RayCastCallback raycast;
+		_world.get().RayCast(&raycast, p1, p2);
 
 		// closest_frac = clamp(random_gauss_double(closest_frac, 0.01), 0.0001, 0.999);
 
 		const sf::Color col{
-			static_cast<uint8_t>(lerp(200, 0, closest_frac)),
-			static_cast<uint8_t>(lerp(0, 200, closest_frac)),
+			static_cast<uint8_t>(lerp(200, 0, raycast.closest_fraction)),
+			static_cast<uint8_t>(lerp(0, 200, raycast.closest_fraction)),
 			0,
-			static_cast<uint8_t>(lerp(150, 0, closest_frac))};
+			static_cast<uint8_t>(lerp(150, 0, raycast.closest_fraction))};
 
-		sf::Vertex v1{sf::Vector2f{rin.p1.x, rin.p1.y}};
+		sf::Vertex v1{sf::Vector2f{p1.x, p1.y}};
 		v1.color     = col;
 		_rays[i * 2] = v1;
 
-		b2Vec2     hpoint = rin.p1 + closest_frac * (rin.p2 - rin.p1);
+		b2Vec2     hpoint = p1 + raycast.closest_fraction * (p2 - p1);
 		sf::Vertex v2{sf::Vector2f{hpoint.x, hpoint.y}};
 		v2.color           = col;
 		_rays[(i * 2) + 1] = v2;
 
-		_ray_distances[i] = static_cast<double>(1.f - closest_frac);
+		_ray_distances[i] = static_cast<double>(1.f - raycast.closest_fraction);
 	}
 }
 
