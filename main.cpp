@@ -16,6 +16,7 @@
 #include <fmt/core.h>
 #include <fstream>
 #include <imgui-SFML.h>
+#include <spdlog/spdlog.h>
 #include <tbb/tbb.h>
 
 struct GuiWindows
@@ -25,89 +26,86 @@ struct GuiWindows
 	bool draw_neural     = false;
 };
 
-int app(sf::RenderWindow& win)
+class App
 {
-	Simulation sim;
+	public:
+	App();
+	~App();
 
-	bool        fast_simulation = false;
-	std::size_t ticks           = 0;
+	void run();
 
-	GuiWindows windows;
+	private:
+	static sf::ContextSettings default_context_settings();
 
-	Mutator mutator;
-	mutator.settings.load_from_file();
+	void advance_simulation(std::size_t ticks = 1);
+	void frame();
 
-	std::vector<Individual> individuals(sim.cars.size());
+	void start_new_run();
+	void mutate_and_restart();
 
-	for (std::size_t i = 0; i < individuals.size(); ++i)
+	void reset_individuals();
+	void load_fonts();
+
+	sf::RenderWindow _window;
+
+	Simulation _sim;
+	bool       _fast_simulation = false;
+
+	std::vector<Individual> _population;
+
+	Mutator _mutator;
+
+	GuiWindows _gui;
+
+	sf::Font _font;
+
+	sf::Clock _frame_dt_clock;
+	sf::Clock _sim_dt_clock;
+
+	float _ups = 0.0f;
+
+	// TODO: move camera stuff elsewhere
+	float       _czoom              = 0.1f;
+	Individual* _tracked_individual = nullptr;
+};
+
+App::App() : _window(sf::VideoMode(800, 600), "carnn", sf::Style::Default, default_context_settings())
+{
+	ImGui::SFML::Init(_window, false);
+	load_fonts();
+	_mutator.settings.load_from_file();
+	reset_individuals();
+}
+
+App::~App() { ImGui::SFML::Shutdown(); }
+
+void App::run()
+{
+	_tracked_individual = &_population[0];
+
+	while (_window.isOpen())
 	{
-		Individual& individual = individuals[i];
-
-		individual.car_id = i;
-
-		individual.network = Network(total_rays + 4, 6);
-		mutator.randomize(individual.network);
-
-		auto& inputs  = individual.network.inputs().neurons;
-		auto& outputs = individual.network.outputs().neurons;
-
-		inputs[0].label = "vector to objective (x)";
-		inputs[1].label = "vector to objective (y)";
-		inputs[2].label = "velocity (forward)";
-		inputs[3].label = "velocity (lateral)";
-		for (std::size_t i = 4; i < inputs.size(); ++i)
-		{
-			inputs[i].label = fmt::format("lidar #{}", i - 4 + 1);
-		}
-
-		outputs[Axon_Forward].label     = "Forward";
-		outputs[Axon_Backwards].label   = "Backwards";
-		outputs[Axon_Brake].label       = "Brake force";
-		outputs[Axon_Steer_Left].label  = "Left steering";
-		outputs[Axon_Steer_Right].label = "Right steering";
-		outputs[Axon_Drift].label       = "Drifting";
+		advance_simulation(_fast_simulation ? 120 : 1);
+		frame();
 	}
+}
 
-	float total_time = 0.0f;
+sf::ContextSettings App::default_context_settings()
+{
+	sf::ContextSettings ret;
+	ret.antialiasingLevel = 4;
+	return ret;
+}
 
-	const auto reset = [&] {
-		total_time = 0.0f;
-
-		for (auto& individual : individuals)
-		{
-			individual.network.reset_values();
-		}
-
-		ticks = 0;
-	};
-
-	const auto mutate = [&] {
-		mutator.darwin(sim, individuals);
-		reset();
-	};
-
-	// Define the time data (delta time + simulation speed)
-	sf::Clock dtclock;
-
-	// Define the camera settings
-	float czoom = 0.1f;
-
-	sf::Font infofnt;
-	if (!infofnt.loadFromFile("Tamzen8x16r.ttf"))
-		std::cerr << "WARNING: Failed to load font." << std::endl;
-
-	while (win.isOpen())
+void App::advance_simulation(std::size_t ticks)
+{
+	for (std::size_t i = 0; i < ticks; ++i)
 	{
-		if (ticks == 0)
-		{
-			sim = {};
-		}
-
-		tbb::parallel_for(tbb::blocked_range<std::size_t>(0, individuals.size()), [&](const auto& range) {
+		tbb::parallel_for(tbb::blocked_range<std::size_t>(0, _population.size()), [&](const auto& range) {
 			for (std::size_t i = range.begin(); i < range.end(); ++i)
 			{
-				Car&     c   = *sim.cars[individuals[i].car_id];
-				Network& net = individuals[i].network;
+				Car&     c   = *_sim.cars[_population[i].car_id];
+				Network& net = _population[i].network;
 
 				if (c.dead)
 				{
@@ -115,7 +113,7 @@ int app(sf::RenderWindow& win)
 					continue;
 				}
 
-				if (individuals[i].survivor_from_last)
+				if (_population[i].survivor_from_last)
 				{
 					c.with_color(sf::Color{200, 50, 0, 200}, 255);
 				}
@@ -184,249 +182,299 @@ int app(sf::RenderWindow& win)
 			}
 		});
 
-		Individual& top_individual = individuals[0];
-		Car&        top_car        = *sim.cars[top_individual.car_id];
-		Network&    top_network    = top_individual.network;
-
-		sf::Time time = dtclock.restart();
-
-		float real_dt = time.asSeconds();
-
-		tbb::parallel_for(tbb::blocked_range(sim.units.begin(), sim.units.end()), [](const auto& range) {
+		tbb::parallel_for(tbb::blocked_range(_sim.units.begin(), _sim.units.end()), [](const auto& range) {
 			for (SimulationUnit& unit : range)
 			{
 				unit.world.set_dt(1.0f / 30.0f);
 				unit.world.step(10.0f, 16, 16).update();
+				++unit.ticks_elapsed;
+				unit.seconds_elapsed += unit.world.dt();
 			}
 		});
 
-		++ticks;
-		total_time += sim.units[0].world.dt();
+		const float total_time = _sim.units[0].seconds_elapsed;
 
 		if (total_time > 60.0f * 5.0f)
 		{
-			mutate();
-		}
-
-		win.setFramerateLimit(fast_simulation ? 0 : 80);
-
-		if (!fast_simulation || ticks % 60 == 0)
-		{
-			ImGui::SFML::Update(win, time);
-
-			for (sf::Event ev; win.pollEvent(ev);)
-			{
-				ImGui::SFML::ProcessEvent(ev);
-
-				switch (ev.type)
-				{
-				case sf::Event::Closed: win.close(); break;
-
-				case sf::Event::KeyPressed:
-					if (ev.key.code == sf::Keyboard::Escape)
-					{
-						return 0;
-					}
-					else if (ev.key.code == sf::Keyboard::R)
-					{
-						return 2;
-					}
-					else if (ev.key.code == sf::Keyboard::F)
-					{
-						fast_simulation = !fast_simulation;
-					}
-					else if (ev.key.code == sf::Keyboard::D)
-					{
-						top_network.dump(std::cout);
-					}
-					else if (ev.key.code == sf::Keyboard::S)
-					{
-						std::ofstream               os("nets.bin", std::ios::binary);
-						cereal::BinaryOutputArchive archive(os);
-						archive(individuals);
-					}
-					else if (ev.key.code == sf::Keyboard::L)
-					{
-						std::ifstream              is("nets.bin", std::ios::binary);
-						cereal::BinaryInputArchive archive(is);
-						archive(individuals);
-
-						mutator = {};
-						reset();
-					}
-					break;
-
-				case sf::Event::MouseWheelScrolled:
-					czoom = std::max(czoom - (ev.mouseWheelScroll.delta * .01f), 0.01f);
-					break;
-
-				default: break;
-				}
-			}
-
-			win.clear(sf::Color{20, 20, 20});
-			win.draw(sim.checkpoint_vertices);
-			win.draw(sim.wall_vertices.data(), sim.wall_vertices.size(), sf::Lines);
-			for (auto& unit : sim.units)
-			{
-				unit.world.render(win);
-			}
-
-			const b2Vec2 b2target = top_car.get().GetPosition();
-			top_car.world().update_view(win, sf::Vector2f{b2target.x, b2target.y}, czoom);
-			/*sf::View view = win.getView();
-			view.rotate(top_car.get().GetAngle() * (360.0f / (2.0f * 3.14159265359f)));
-			win.setView(view);*/
-
-			sf::View cview{win.getView()};
-			float    ui_scale = 1.0f;
-			win.setView(sf::View{sf::FloatRect{
-				0.f,
-				0.f,
-				static_cast<float>(win.getSize().x) * ui_scale,
-				static_cast<float>(win.getSize().y) * ui_scale}});
-
-			if (windows.draw_neural)
-			{
-				Visualizer{top_network}.display(win, infofnt);
-			}
-
-			if (ImGui::BeginMainMenuBar())
-			{
-				ImGui::TextColored(
-					ImVec4(1.0, 1.0, 1.0, 0.5), "%s", fmt::format("CarNN - {:6.1f}ups", 1.0f / real_dt).c_str());
-				ImGui::SameLine();
-
-				if (ImGui::BeginMenu("View"))
-				{
-					ImGui::MenuItem("Simulation", nullptr, &windows.simulation_open);
-					ImGui::MenuItem("Mutator", nullptr, &windows.mutator_open);
-					ImGui::MenuItem("Network viz", nullptr, &windows.draw_neural);
-					ImGui::EndMenu();
-				}
-
-				ImGui::EndMainMenuBar();
-			}
-
-			if (windows.simulation_open)
-			{
-				if (ImGui::Begin("Simulation", &windows.simulation_open))
-				{
-					ImGui::Checkbox("Fast simulation", &fast_simulation);
-
-					if (ImGui::Button("Mutate current pop."))
-					{
-						mutate();
-					}
-
-					if (ImGui::Button("Restart current run"))
-					{
-						reset();
-					}
-				}
-				ImGui::End();
-			}
-
-			if (windows.mutator_open)
-			{
-				if (ImGui::Begin("Mutator controls", &windows.mutator_open))
-				{
-					if (ImGui::Button("Load"))
-					{
-						mutator.settings.load_from_file();
-					}
-					ImGui::SameLine();
-					if (ImGui::Button("Save"))
-					{
-						mutator.settings.save();
-					}
-					ImGui::SameLine();
-					if (ImGui::Button("Defaults"))
-					{
-						mutator.settings.load_defaults();
-					}
-					ImGui::Separator();
-
-					ImGui::Text("Bias");
-					ImGui::PushID("Bias");
-					ImGui::InputFloat("Initial stddev", &mutator.settings.bias_initial_std_dev, 0.01, 0.1, "%.3f");
-					ImGui::InputFloat(
-						"Soft mutation stddev", &mutator.settings.bias_mutation_factor, 0.01, 0.1, "%.3f");
-					ImGui::SliderFloat(
-						"Soft mutation chance", &mutator.settings.bias_mutation_chance, 0.00, 0.99, "%.3f");
-					ImGui::InputFloat(
-						"Hard mutation stddev", &mutator.settings.bias_hard_mutation_factor, 0.01, 0.1, "%.3f");
-					ImGui::SliderFloat(
-						"Hard mutation chance", &mutator.settings.bias_hard_mutation_chance, 0.00, 0.99, "%.3f");
-					ImGui::PopID();
-					ImGui::Separator();
-
-					ImGui::Text("Weight");
-					ImGui::PushID("Weight");
-					ImGui::InputFloat("Initial stddev", &mutator.settings.weight_initial_std_dev, 0.01, 0.1, "%.3f");
-					ImGui::InputFloat(
-						"Soft mutation stddev", &mutator.settings.weight_mutation_factor, 0.01, 0.1, "%.3f");
-					ImGui::SliderFloat(
-						"Soft mutation chance", &mutator.settings.weight_mutation_chance, 0.00, 0.99, "%.3f");
-					ImGui::InputFloat(
-						"Hard mutation stddev", &mutator.settings.weight_hard_mutation_factor, 0.01, 0.1, "%.3f");
-					ImGui::SliderFloat(
-						"Hard mutation chance", &mutator.settings.weight_hard_mutation_chance, 0.00, 0.99, "%.3f");
-					ImGui::PopID();
-					ImGui::Separator();
-
-					ImGui::Text("Activation method");
-					ImGui::PushID("Activation method");
-					ImGui::SliderFloat(
-						"Mutation chance", &mutator.settings.activation_mutation_chance, 0.00, 0.99, "%.3f");
-					ImGui::PopID();
-					ImGui::Separator();
-
-					ImGui::Text("Neuron creation");
-					ImGui::PushID("Neuron");
-					ImGui::SliderFloat("Chance", &mutator.settings.neuron_creation_chance, 0.00, 0.99, "%.3f");
-					ImGui::SliderFloat(
-						"Extra synapse chance", &mutator.settings.extra_synapse_connection_chance, 0.00, 0.99, "%.3f");
-					ImGui::PopID();
-					ImGui::Separator();
-
-					ImGui::Text("Network simplifier");
-					ImGui::PushID("Net");
-					ImGui::SliderFloat(
-						"Synapse destruction chance", &mutator.settings.synapse_destruction_chance, 0.00, 0.99, "%.3f");
-					ImGui::SliderFloat(
-						"Conservative GC chance", &mutator.settings.conservative_gc_chance, 0.00, 1.0, "%.3f");
-					ImGui::SliderFloat(
-						"Aggressive GC chance", &mutator.settings.aggressive_gc_chance, 0.00, 1.0, "%.3f");
-					ImGui::PopID();
-					ImGui::Separator();
-
-					ImGui::SliderInt("Survivors per round", &mutator.settings.round_survivors, 1, 30);
-				}
-
-				ImGui::End();
-			}
-
-			win.setView(cview);
-
-			ImGui::SFML::Render(win);
-
-			win.display();
+			mutate_and_restart();
 		}
 	}
 
-	return 0;
+	const sf::Time sim_time = _sim_dt_clock.restart();
+	_ups                    = float(ticks) * 1.0f / sim_time.asSeconds();
 }
 
-int main()
+void App::frame()
 {
-	tbb::task_scheduler_init init;
+	_window.setFramerateLimit(!_fast_simulation ? 80 : 0);
 
-	// Define the render window
-	sf::ContextSettings settings;
-	settings.antialiasingLevel = 4;
-	sf::RenderWindow win{sf::VideoMode{800, 600}, "Neural Network", sf::Style::Default, settings};
-	ImGui::SFML::Init(win, false);
+	const sf::Time frame_time = _frame_dt_clock.restart();
+
+	ImGui::SFML::Update(_window, frame_time);
+
+	for (sf::Event ev; _window.pollEvent(ev);)
+	{
+		ImGui::SFML::ProcessEvent(ev);
+
+		switch (ev.type)
+		{
+		case sf::Event::Closed:
+		{
+			_window.close();
+			break;
+		}
+
+		case sf::Event::KeyPressed:
+			if (ev.key.code == sf::Keyboard::Escape)
+			{
+				_window.close();
+			}
+			else if (ev.key.code == sf::Keyboard::R)
+			{
+				// FIXME: this should be reimplemented
+				return;
+			}
+			else if (ev.key.code == sf::Keyboard::F)
+			{
+				_fast_simulation = !_fast_simulation;
+			}
+			else if (ev.key.code == sf::Keyboard::S)
+			{
+				std::ofstream               os("nets.bin", std::ios::binary);
+				cereal::BinaryOutputArchive archive(os);
+				archive(_population);
+			}
+			else if (ev.key.code == sf::Keyboard::L)
+			{
+				std::ifstream              is("nets.bin", std::ios::binary);
+				cereal::BinaryInputArchive archive(is);
+				archive(_population);
+
+				start_new_run();
+			}
+			break;
+
+		case sf::Event::MouseWheelScrolled:
+		{
+			_czoom = std::max(_czoom - (ev.mouseWheelScroll.delta * .01f), 0.01f);
+			break;
+		}
+
+		default: break;
+		}
+	}
+
+	_window.clear(sf::Color{20, 20, 20});
+	_window.draw(_sim.checkpoint_vertices);
+	_window.draw(_sim.wall_vertices.data(), _sim.wall_vertices.size(), sf::Lines);
+	for (auto& unit : _sim.units)
+	{
+		unit.world.render(_window);
+	}
+
+	if (_tracked_individual != nullptr)
+	{
+		Car& car = *_sim.cars[_tracked_individual->car_id];
+
+		const b2Vec2 b2target = car.get().GetPosition();
+		car.world().update_view(_window, sf::Vector2f{b2target.x, b2target.y}, _czoom);
+		/*sf::View view = win.getView();
+		view.rotate(top_car.get().GetAngle() * (360.0f / (2.0f * 3.14159265359f)));
+		win.setView(view);*/
+	}
+
+	sf::View world_view(_window.getView());
+
+	float ui_scale = 1.0f;
+	_window.setView(sf::View{
+		sf::FloatRect{0.f, 0.f, float(_window.getSize().x) * ui_scale, float(_window.getSize().y) * ui_scale}});
+
+	if (_tracked_individual != nullptr && _gui.draw_neural)
+	{
+		Visualizer(_tracked_individual->network).display(_window, _font);
+	}
+
+	if (ImGui::BeginMainMenuBar())
+	{
+		// FIXME: reimplement ups display using a different clock
+		ImGui::TextColored(
+			ImVec4(1.0, 1.0, 1.0, 0.5),
+			"%s",
+			fmt::format("CarNN - {:6.1f}fps - {:6.1f}ups", 1.0f / frame_time.asSeconds(), _ups).c_str());
+		ImGui::SameLine();
+
+		if (ImGui::BeginMenu("View"))
+		{
+			ImGui::MenuItem("Simulation", nullptr, &_gui.simulation_open);
+			ImGui::MenuItem("Mutator", nullptr, &_gui.mutator_open);
+			ImGui::MenuItem("Network viz", nullptr, &_gui.draw_neural);
+			ImGui::EndMenu();
+		}
+
+		ImGui::EndMainMenuBar();
+	}
+
+	if (_gui.simulation_open)
+	{
+		if (ImGui::Begin("Simulation", &_gui.simulation_open))
+		{
+			ImGui::Checkbox("Fast simulation", &_fast_simulation);
+
+			if (ImGui::Button("Mutate current pop."))
+			{
+				mutate_and_restart();
+			}
+
+			if (ImGui::Button("Restart current run"))
+			{
+				start_new_run();
+			}
+		}
+		ImGui::End();
+	}
+
+	if (_gui.mutator_open)
+	{
+		if (ImGui::Begin("Mutator controls", &_gui.mutator_open))
+		{
+			if (ImGui::Button("Load"))
+			{
+				_mutator.settings.load_from_file();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Save"))
+			{
+				_mutator.settings.save();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Defaults"))
+			{
+				_mutator.settings.load_defaults();
+			}
+			ImGui::Separator();
+
+			ImGui::Text("Bias");
+			ImGui::PushID("Bias");
+			ImGui::InputFloat("Initial stddev", &_mutator.settings.bias_initial_std_dev, 0.01, 0.1, "%.3f");
+			ImGui::InputFloat("Soft mutation stddev", &_mutator.settings.bias_mutation_factor, 0.01, 0.1, "%.3f");
+			ImGui::SliderFloat("Soft mutation chance", &_mutator.settings.bias_mutation_chance, 0.00, 0.99, "%.3f");
+			ImGui::InputFloat("Hard mutation stddev", &_mutator.settings.bias_hard_mutation_factor, 0.01, 0.1, "%.3f");
+			ImGui::SliderFloat(
+				"Hard mutation chance", &_mutator.settings.bias_hard_mutation_chance, 0.00, 0.99, "%.3f");
+			ImGui::PopID();
+			ImGui::Separator();
+
+			ImGui::Text("Weight");
+			ImGui::PushID("Weight");
+			ImGui::InputFloat("Initial stddev", &_mutator.settings.weight_initial_std_dev, 0.01, 0.1, "%.3f");
+			ImGui::InputFloat("Soft mutation stddev", &_mutator.settings.weight_mutation_factor, 0.01, 0.1, "%.3f");
+			ImGui::SliderFloat("Soft mutation chance", &_mutator.settings.weight_mutation_chance, 0.00, 0.99, "%.3f");
+			ImGui::InputFloat(
+				"Hard mutation stddev", &_mutator.settings.weight_hard_mutation_factor, 0.01, 0.1, "%.3f");
+			ImGui::SliderFloat(
+				"Hard mutation chance", &_mutator.settings.weight_hard_mutation_chance, 0.00, 0.99, "%.3f");
+			ImGui::PopID();
+			ImGui::Separator();
+
+			ImGui::Text("Activation method");
+			ImGui::PushID("Activation method");
+			ImGui::SliderFloat("Mutation chance", &_mutator.settings.activation_mutation_chance, 0.00, 0.99, "%.3f");
+			ImGui::PopID();
+			ImGui::Separator();
+
+			ImGui::Text("Neuron creation");
+			ImGui::PushID("Neuron");
+			ImGui::SliderFloat("Chance", &_mutator.settings.neuron_creation_chance, 0.00, 0.99, "%.3f");
+			ImGui::SliderFloat(
+				"Extra synapse chance", &_mutator.settings.extra_synapse_connection_chance, 0.00, 0.99, "%.3f");
+			ImGui::PopID();
+			ImGui::Separator();
+
+			ImGui::Text("Network simplifier");
+			ImGui::PushID("Net");
+			ImGui::SliderFloat(
+				"Synapse destruction chance", &_mutator.settings.synapse_destruction_chance, 0.00, 0.99, "%.3f");
+			ImGui::SliderFloat("Conservative GC chance", &_mutator.settings.conservative_gc_chance, 0.00, 1.0, "%.3f");
+			ImGui::SliderFloat("Aggressive GC chance", &_mutator.settings.aggressive_gc_chance, 0.00, 1.0, "%.3f");
+			ImGui::PopID();
+			ImGui::Separator();
+
+			ImGui::SliderInt("Survivors per round", &_mutator.settings.round_survivors, 1, 30);
+		}
+
+		ImGui::End();
+	}
+
+	_window.setView(world_view);
+
+	ImGui::SFML::Render(_window);
+
+	_window.display();
+}
+
+void App::start_new_run()
+{
+	_sim = {};
+
+	_tracked_individual = &_population[0];
+
+	for (auto& individual : _population)
+	{
+		individual.network.reset_values();
+	}
+}
+
+void App::mutate_and_restart()
+{
+	_mutator.darwin(_sim, _population);
+	start_new_run();
+}
+
+void App::reset_individuals()
+{
+	_population.clear();
+	_population.resize(_sim.cars.size());
+
+	for (std::size_t i = 0; i < _population.size(); ++i)
+	{
+		Individual& individual = _population[i];
+
+		individual.car_id = i;
+
+		individual.network = Network(total_rays + 4, 6);
+		_mutator.randomize(individual.network);
+
+		auto& inputs  = individual.network.inputs().neurons;
+		auto& outputs = individual.network.outputs().neurons;
+
+		inputs[0].label = "vector to objective (x)";
+		inputs[1].label = "vector to objective (y)";
+		inputs[2].label = "velocity (forward)";
+		inputs[3].label = "velocity (lateral)";
+		for (std::size_t lidar_index = 4; lidar_index < inputs.size(); ++lidar_index)
+		{
+			inputs[lidar_index].label = fmt::format("lidar #{}", lidar_index - 4 + 1);
+		}
+
+		outputs[Axon_Forward].label     = "Forward";
+		outputs[Axon_Backwards].label   = "Backwards";
+		outputs[Axon_Brake].label       = "Brake force";
+		outputs[Axon_Steer_Left].label  = "Left steering";
+		outputs[Axon_Steer_Right].label = "Right steering";
+		outputs[Axon_Drift].label       = "Drifting";
+	}
+}
+
+void App::load_fonts()
+{
+	// TODO: cleaner error checking here
+
+	const char* gui_font_path = "Tamzen8x16r.ttf";
+
+	if (!_font.loadFromFile(gui_font_path))
+	{
+		spdlog::error("failed to load GUI font from file '{}'", gui_font_path);
+	}
 
 	{
 		auto& io = ImGui::GetIO();
@@ -435,9 +483,12 @@ int main()
 
 		ImGui::SFML::UpdateFontTexture();
 	}
+}
 
-	while (app(win) == 2)
-		;
+int main()
+{
+	tbb::task_scheduler_init init;
 
-	ImGui::SFML::Shutdown();
+	App app;
+	app.run();
 }

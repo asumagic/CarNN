@@ -14,6 +14,9 @@ class SimulationUnit
 	std::vector<Checkpoint*> checkpoints;
 	Body*                    wall;
 	CarCheckpointListener    contact_listener;
+
+	std::size_t ticks_elapsed   = 0;
+	float       seconds_elapsed = 0.0f;
 };
 
 class Simulation
