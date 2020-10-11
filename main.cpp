@@ -327,7 +327,7 @@ void App::frame()
 			ImGui::PopID();
 			ImGui::Separator();
 
-			ImGui::SliderInt("Survivors per round", &_mutator.settings.round_survivors, 1, 30);
+			ImGui::SliderInt("Survivors per round", &_mutator.settings.round_survivors, 1, 100);
 		}
 
 		ImGui::End();
