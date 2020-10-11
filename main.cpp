@@ -86,9 +86,11 @@ void App::run()
 {
 	_tracked_individual = &_population[0];
 
+	start_new_run();
+
 	while (_window.isOpen())
 	{
-		advance_simulation(_fast_simulation ? 120 : 1);
+		advance_simulation(_fast_simulation ? 1000 : 1);
 		frame();
 	}
 }
@@ -102,28 +104,28 @@ sf::ContextSettings App::default_context_settings()
 
 void App::advance_simulation(std::size_t ticks)
 {
-	for (std::size_t i = 0; i < ticks; ++i)
-	{
-		tbb::parallel_for(tbb::blocked_range(_population.begin(), _population.end()), [&](const auto& range) {
-			for (Individual& individual : range)
-			{
-				tick(individual);
-			}
-		});
-
-		tbb::parallel_for(tbb::blocked_range(_sim.units.begin(), _sim.units.end()), [this](const auto& range) {
+	tbb::parallel_for(tbb::blocked_range(_sim.units.begin(), _sim.units.end()), [&](const auto& range) {
+		for (std::size_t i = 0; i < ticks; ++i)
+		{
 			for (SimulationUnit& unit : range)
 			{
 				tick(unit);
+
+				// HACK:
+				if (unit.seconds_elapsed > 60.0f * 5.0f)
+				{
+					return;
+				}
 			}
-		});
-
-		const float total_time = _sim.units[0].seconds_elapsed;
-
-		if (total_time > 60.0f * 5.0f)
-		{
-			mutate_and_restart();
 		}
+	});
+
+	// FIXME: this loses precision
+	const float total_time = _sim.units[0].seconds_elapsed;
+
+	if (total_time > 60.0f * 5.0f)
+	{
+		mutate_and_restart();
 	}
 
 	const sf::Time sim_time = _sim_dt_clock.restart();
@@ -360,7 +362,7 @@ void App::tick(Individual& individual)
 
 	c.set_target_checkpoint(c.unit->checkpoints.at(c.reached_checkpoints() % c.unit->checkpoints.size()));
 
-	c.compute_raycasts(*c.unit->wall);
+	c.compute_raycasts();
 
 	c.update_inputs(net);
 	net.update();
@@ -417,8 +419,13 @@ void App::tick(Individual& individual)
 
 void App::tick(SimulationUnit& unit)
 {
+	for (auto& car : unit.cars)
+	{
+		tick(*car->individual);
+	}
+
 	unit.world.set_dt(1.0f / 30.0f);
-	unit.world.step(10.0f, 16, 16).update();
+	unit.world.step(10.0f, 1, 1).update();
 	++unit.ticks_elapsed;
 	unit.seconds_elapsed += unit.world.dt();
 }
@@ -432,6 +439,7 @@ void App::start_new_run()
 	for (auto& individual : _population)
 	{
 		individual.network.reset_values();
+		_sim.cars[individual.car_id]->individual = &individual;
 	}
 }
 

@@ -265,7 +265,7 @@ class RayCastCallback : public b2RayCastCallback
 	float closest_fraction = 1.0f;
 };
 
-void Car::compute_raycasts(Body& wall_body)
+void Car::compute_raycasts()
 {
 	++_ray_update_frequency;
 

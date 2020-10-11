@@ -11,6 +11,7 @@ class SimulationUnit
 	public:
 	World world;
 
+	std::vector<Car*>        cars;
 	std::vector<Checkpoint*> checkpoints;
 	Body*                    wall;
 	CarCheckpointListener    contact_listener;

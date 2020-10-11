@@ -177,12 +177,13 @@ void Simulation::init_cars()
 	fixdef.restitution       = 0.2f;
 	fixdef.filter.groupIndex = -1;
 
-	for (std::size_t i = 0; i < 24 * 5; ++i)
+	for (std::size_t i = 0; i < 24 * 15; ++i)
 	{
 		SimulationUnit& unit = optimal_unit();
 		Car&            car  = unit.world.add_body<Car>(bdef);
 		car.unit             = &unit;
 		cars.push_back(&car);
+		unit.cars.push_back(&car);
 
 		car.with_color(sf::Color{200, 50, 0, 50}).add_fixture(fixdef);
 		car.transform(car_origin, static_cast<float>(0.5 * M_PI));

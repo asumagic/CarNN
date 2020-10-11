@@ -10,6 +10,7 @@ class Network;
 class Wheel;
 class World;
 class SimulationUnit;
+struct Individual;
 
 enum AxonControl : size_t
 {
@@ -56,13 +57,15 @@ class Car : public Body
 
 	void transform(const b2Vec2 pos, const float angle);
 
-	void compute_raycasts(Body& wall_body);
+	void compute_raycasts();
 
 	void update_inputs(Network& n);
 
 	bool dead = false;
 
-	SimulationUnit* unit = nullptr; // TODO: make this less garbage
+	// TODO: make this less garbage
+	SimulationUnit* unit       = nullptr;
+	Individual*     individual = nullptr;
 
 	private:
 	std::array<sf::Vertex, total_rays * 2> _rays{};
