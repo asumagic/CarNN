@@ -283,7 +283,7 @@ ActivationMethod Mutator::random_activation_method()
 		return ActivationMethod::Sigmoid;
 	}
 
-	if (x < 0.97)
+	if (x < 0.9)
 	{
 		return ActivationMethod::LeakyRelu;
 	}
