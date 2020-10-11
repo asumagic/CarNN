@@ -40,6 +40,9 @@ class App
 	void advance_simulation(std::size_t ticks = 1);
 	void frame();
 
+	void tick(Individual& individual);
+	void tick(SimulationUnit& unit);
+
 	void start_new_run();
 	void mutate_and_restart();
 
@@ -101,94 +104,17 @@ void App::advance_simulation(std::size_t ticks)
 {
 	for (std::size_t i = 0; i < ticks; ++i)
 	{
-		tbb::parallel_for(tbb::blocked_range<std::size_t>(0, _population.size()), [&](const auto& range) {
-			for (std::size_t i = range.begin(); i < range.end(); ++i)
+		tbb::parallel_for(tbb::blocked_range(_population.begin(), _population.end()), [&](const auto& range) {
+			for (Individual& individual : range)
 			{
-				Car&     c   = *_sim.cars[_population[i].car_id];
-				Network& net = _population[i].network;
-
-				if (c.dead)
-				{
-					c.with_color(sf::Color{200, 0, 0, 60}, 255);
-					continue;
-				}
-
-				if (_population[i].survivor_from_last)
-				{
-					c.with_color(sf::Color{200, 50, 0, 200}, 255);
-				}
-				else
-				{
-					c.with_color(sf::Color{0, 0, 100, 40}, 255);
-				}
-
-				c.set_target_checkpoint(c.unit->checkpoints.at(c.reached_checkpoints() % c.unit->checkpoints.size()));
-
-				c.compute_raycasts(*c.unit->wall);
-
-				c.update_inputs(net);
-				net.update();
-				const auto& results = net.outputs();
-
-				/*if (false)
-				{
-					if (sf::Joystick::isConnected(0))
-					{
-						c.steer(sf::Joystick::getAxisPosition(0, sf::Joystick::X) / 100.0f);
-						c.accelerate(1.0f - (sf::Joystick::getAxisPosition(0, sf::Joystick::Y) / 200.0f + 0.5f)); //
-				wtf c.brake(1.0f - (sf::Joystick::getAxisPosition(0, sf::Joystick::Z) / 200.0f + 0.5f));      // wtf
-					}
-				}
-				else if (false)
-				{
-					const bool forward = sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
-					const bool left    = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
-					const bool right   = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
-					const bool back    = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
-					const bool brake   = sf::Keyboard::isKeyPressed(sf::Keyboard::C);
-					const bool drift   = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
-
-					if (forward ^ back)
-					{
-						c.accelerate(forward ? 1.0f : -1.0f);
-					}
-					else
-					{
-						c.accelerate(0.0f);
-					}
-
-					if (left ^ right)
-					{
-						c.steer(right ? 1.0f : -1.0f);
-					}
-					else
-					{
-						c.steer(0.0f);
-					}
-
-					c.brake(brake ? 1.0f : 0.0f);
-
-					c.set_drift(drift ? 1.0f : 0.0f);
-				}
-				else*/
-				{
-					c.set_drift(static_cast<float>(results.neurons[Axon_Drift].value));
-					c.steer(static_cast<float>(
-						results.neurons[Axon_Steer_Right].value - results.neurons[Axon_Steer_Left].value));
-					c.accelerate(static_cast<float>(
-						results.neurons[Axon_Forward].value - results.neurons[Axon_Backwards].value));
-					c.brake(results.neurons[Axon_Brake].value);
-				}
+				tick(individual);
 			}
 		});
 
-		tbb::parallel_for(tbb::blocked_range(_sim.units.begin(), _sim.units.end()), [](const auto& range) {
+		tbb::parallel_for(tbb::blocked_range(_sim.units.begin(), _sim.units.end()), [this](const auto& range) {
 			for (SimulationUnit& unit : range)
 			{
-				unit.world.set_dt(1.0f / 30.0f);
-				unit.world.step(10.0f, 16, 16).update();
-				++unit.ticks_elapsed;
-				unit.seconds_elapsed += unit.world.dt();
+				tick(unit);
 			}
 		});
 
@@ -410,6 +336,91 @@ void App::frame()
 	ImGui::SFML::Render(_window);
 
 	_window.display();
+}
+
+void App::tick(Individual& individual)
+{
+	Car&     c   = *_sim.cars[individual.car_id];
+	Network& net = individual.network;
+
+	if (c.dead)
+	{
+		c.with_color(sf::Color{200, 0, 0, 60}, 255);
+		return;
+	}
+
+	if (individual.survivor_from_last)
+	{
+		c.with_color(sf::Color{200, 50, 0, 200}, 255);
+	}
+	else
+	{
+		c.with_color(sf::Color{0, 0, 100, 40}, 255);
+	}
+
+	c.set_target_checkpoint(c.unit->checkpoints.at(c.reached_checkpoints() % c.unit->checkpoints.size()));
+
+	c.compute_raycasts(*c.unit->wall);
+
+	c.update_inputs(net);
+	net.update();
+	const auto& results = net.outputs();
+
+	/*if (false)
+	{
+		if (sf::Joystick::isConnected(0))
+		{
+			c.steer(sf::Joystick::getAxisPosition(0, sf::Joystick::X) / 100.0f);
+			c.accelerate(1.0f - (sf::Joystick::getAxisPosition(0, sf::Joystick::Y) / 200.0f + 0.5f)); //
+	wtf c.brake(1.0f - (sf::Joystick::getAxisPosition(0, sf::Joystick::Z) / 200.0f + 0.5f));      // wtf
+		}
+	}
+	else if (false)
+	{
+		const bool forward = sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
+		const bool left    = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
+		const bool right   = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
+		const bool back    = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+		const bool brake   = sf::Keyboard::isKeyPressed(sf::Keyboard::C);
+		const bool drift   = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
+
+		if (forward ^ back)
+		{
+			c.accelerate(forward ? 1.0f : -1.0f);
+		}
+		else
+		{
+			c.accelerate(0.0f);
+		}
+
+		if (left ^ right)
+		{
+			c.steer(right ? 1.0f : -1.0f);
+		}
+		else
+		{
+			c.steer(0.0f);
+		}
+
+		c.brake(brake ? 1.0f : 0.0f);
+
+		c.set_drift(drift ? 1.0f : 0.0f);
+	}
+	else*/
+	{
+		c.set_drift(static_cast<float>(results.neurons[Axon_Drift].value));
+		c.steer(static_cast<float>(results.neurons[Axon_Steer_Right].value - results.neurons[Axon_Steer_Left].value));
+		c.accelerate(static_cast<float>(results.neurons[Axon_Forward].value - results.neurons[Axon_Backwards].value));
+		c.brake(results.neurons[Axon_Brake].value);
+	}
+}
+
+void App::tick(SimulationUnit& unit)
+{
+	unit.world.set_dt(1.0f / 30.0f);
+	unit.world.step(10.0f, 16, 16).update();
+	++unit.ticks_elapsed;
+	unit.seconds_elapsed += unit.world.dt();
 }
 
 void App::start_new_run()
