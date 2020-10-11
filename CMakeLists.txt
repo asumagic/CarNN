@@ -3,7 +3,7 @@ project(CarNN)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG")
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17 -fopenmp")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17")
 
 find_package(SFML 2 COMPONENTS graphics REQUIRED)
 find_package(imgui CONFIG REQUIRED)
@@ -13,6 +13,7 @@ find_package(unofficial-box2d CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(cereal CONFIG REQUIRED)
+find_package(TBB CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
 	entities/car.cpp
@@ -39,4 +40,5 @@ target_link_libraries(${PROJECT_NAME}
 	fmt
 	spdlog::spdlog
 	cereal
+	TBB::tbb
 )

@@ -16,6 +16,7 @@
 #include <fmt/core.h>
 #include <fstream>
 #include <imgui-SFML.h>
+#include <tbb/tbb.h>
 
 struct GuiWindows
 {
@@ -87,7 +88,6 @@ int app(sf::RenderWindow& win)
 
 	// Define the time data (delta time + simulation speed)
 	sf::Clock dtclock;
-	float     speed = 10.0f;
 
 	// Define the camera settings
 	float czoom = 0.1f;
@@ -103,86 +103,86 @@ int app(sf::RenderWindow& win)
 			sim = {};
 		}
 
-// @TODO move this mess
-#pragma omp parallel for
-		for (std::size_t i = 0; i < individuals.size(); ++i)
-		{
-			Car&     c   = *sim.cars[individuals[i].car_id];
-			Network& net = individuals[i].network;
-
-			if (c.dead)
+		tbb::parallel_for(tbb::blocked_range<std::size_t>(0, individuals.size()), [&](const auto& range) {
+			for (std::size_t i = range.begin(); i < range.end(); ++i)
 			{
-				c.with_color(sf::Color{200, 0, 0, 60}, 255);
-				continue;
-			}
+				Car&     c   = *sim.cars[individuals[i].car_id];
+				Network& net = individuals[i].network;
 
-			if (individuals[i].survivor_from_last)
-			{
-				c.with_color(sf::Color{200, 50, 0, 200}, 255);
-			}
-			else
-			{
-				c.with_color(sf::Color{0, 0, 100, 40}, 255);
-			}
-
-			c.set_target_checkpoint(c.unit->checkpoints.at(c.reached_checkpoints() % c.unit->checkpoints.size()));
-
-			c.compute_raycasts(*c.unit->wall);
-
-			c.update_inputs(net);
-			net.update();
-			const auto& results = net.outputs();
-
-			/*if (false)
-			{
-				if (sf::Joystick::isConnected(0))
+				if (c.dead)
 				{
-					c.steer(sf::Joystick::getAxisPosition(0, sf::Joystick::X) / 100.0f);
-					c.accelerate(1.0f - (sf::Joystick::getAxisPosition(0, sf::Joystick::Y) / 200.0f + 0.5f)); // wtf
-					c.brake(1.0f - (sf::Joystick::getAxisPosition(0, sf::Joystick::Z) / 200.0f + 0.5f));      // wtf
+					c.with_color(sf::Color{200, 0, 0, 60}, 255);
+					continue;
 				}
-			}
-			else if (false)
-			{
-				const bool forward = sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
-				const bool left    = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
-				const bool right   = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
-				const bool back    = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
-				const bool brake   = sf::Keyboard::isKeyPressed(sf::Keyboard::C);
-				const bool drift   = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
 
-				if (forward ^ back)
+				if (individuals[i].survivor_from_last)
 				{
-					c.accelerate(forward ? 1.0f : -1.0f);
+					c.with_color(sf::Color{200, 50, 0, 200}, 255);
 				}
 				else
 				{
-					c.accelerate(0.0f);
+					c.with_color(sf::Color{0, 0, 100, 40}, 255);
 				}
 
-				if (left ^ right)
+				c.set_target_checkpoint(c.unit->checkpoints.at(c.reached_checkpoints() % c.unit->checkpoints.size()));
+
+				c.compute_raycasts(*c.unit->wall);
+
+				c.update_inputs(net);
+				net.update();
+				const auto& results = net.outputs();
+
+				/*if (false)
 				{
-					c.steer(right ? 1.0f : -1.0f);
+					if (sf::Joystick::isConnected(0))
+					{
+						c.steer(sf::Joystick::getAxisPosition(0, sf::Joystick::X) / 100.0f);
+						c.accelerate(1.0f - (sf::Joystick::getAxisPosition(0, sf::Joystick::Y) / 200.0f + 0.5f)); //
+				wtf c.brake(1.0f - (sf::Joystick::getAxisPosition(0, sf::Joystick::Z) / 200.0f + 0.5f));      // wtf
+					}
 				}
-				else
+				else if (false)
 				{
-					c.steer(0.0f);
+					const bool forward = sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
+					const bool left    = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
+					const bool right   = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
+					const bool back    = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+					const bool brake   = sf::Keyboard::isKeyPressed(sf::Keyboard::C);
+					const bool drift   = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
+
+					if (forward ^ back)
+					{
+						c.accelerate(forward ? 1.0f : -1.0f);
+					}
+					else
+					{
+						c.accelerate(0.0f);
+					}
+
+					if (left ^ right)
+					{
+						c.steer(right ? 1.0f : -1.0f);
+					}
+					else
+					{
+						c.steer(0.0f);
+					}
+
+					c.brake(brake ? 1.0f : 0.0f);
+
+					c.set_drift(drift ? 1.0f : 0.0f);
 				}
-
-				c.brake(brake ? 1.0f : 0.0f);
-
-				c.set_drift(drift ? 1.0f : 0.0f);
+				else*/
+				{
+					c.set_drift(static_cast<float>(results.neurons[Axon_Drift].value));
+					c.steer(static_cast<float>(
+						results.neurons[Axon_Steer_Right].value - results.neurons[Axon_Steer_Left].value));
+					c.accelerate(static_cast<float>(
+						results.neurons[Axon_Forward].value - results.neurons[Axon_Backwards].value));
+					c.brake(results.neurons[Axon_Brake].value);
+				}
 			}
-			else*/
-			{
-				c.set_drift(static_cast<float>(results.neurons[Axon_Drift].value));
-				c.steer(static_cast<float>(
-					results.neurons[Axon_Steer_Right].value - results.neurons[Axon_Steer_Left].value));
-				c.accelerate(
-					static_cast<float>(results.neurons[Axon_Forward].value - results.neurons[Axon_Backwards].value));
-				c.brake(results.neurons[Axon_Brake].value);
-			}
-		}
+		});
 
 		Individual& top_individual = individuals[0];
 		Car&        top_car        = *sim.cars[top_individual.car_id];
@@ -192,13 +192,13 @@ int app(sf::RenderWindow& win)
 
 		float real_dt = time.asSeconds();
 
-#pragma omp parallel for
-		for (std::size_t i = 0; i < sim.units.size(); ++i)
-		{
-			SimulationUnit& unit = sim.units[i];
-			unit.world.set_dt(1.0f / 30.0f);
-			unit.world.step(speed, 16, 16).update();
-		}
+		tbb::parallel_for(tbb::blocked_range(sim.units.begin(), sim.units.end()), [](const auto& range) {
+			for (SimulationUnit& unit : range)
+			{
+				unit.world.set_dt(1.0f / 30.0f);
+				unit.world.step(10.0f, 16, 16).update();
+			}
+		});
 
 		++ticks;
 		total_time += sim.units[0].world.dt();
@@ -420,6 +420,8 @@ int app(sf::RenderWindow& win)
 
 int main()
 {
+	tbb::task_scheduler_init init;
+
 	// Define the render window
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 4;
