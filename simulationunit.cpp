@@ -6,9 +6,11 @@
 #include <fstream>
 #include <json/reader.h>
 #include <json/value.h>
+#include <spdlog/spdlog.h>
 
 Simulation::Simulation() : units(std::thread::hardware_concurrency())
 {
+	spdlog::info("reinitializing simulation");
 	load_map("map.png");
 	load_checkpoints("race.json");
 	init_cars();
@@ -16,6 +18,8 @@ Simulation::Simulation() : units(std::thread::hardware_concurrency())
 
 void Simulation::load_map(const char* fname)
 {
+	spdlog::info("loading bitmap from file '{}'", fname);
+
 	sf::Image map;
 	if (!map.loadFromFile(fname))
 	{
@@ -83,6 +87,8 @@ void Simulation::load_map(const char* fname)
 
 void Simulation::load_checkpoints(const char* fname)
 {
+	spdlog::info("loading checkpoints from file '{}'", fname);
+
 	std::ifstream           race_config{fname, std::ios::binary};
 	Json::Value             root;
 	Json::CharReaderBuilder reader;
@@ -145,6 +151,8 @@ void Simulation::load_checkpoints(const char* fname)
 
 void Simulation::init_cars()
 {
+	spdlog::info("spawning cars");
+
 	b2BodyDef bdef;
 	bdef.type           = b2_dynamicBody;
 	bdef.angularDamping = 0.01f;
