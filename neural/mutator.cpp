@@ -78,7 +78,7 @@ void Mutator::darwin(Simulation& sim, std::vector<Individual>& individuals)
 	if (new_max_fitness >= max_fitness + fitness_evolution_threshold)
 	{
 		spdlog::info(
-			"Entering generation {}: fitness {:.1f} exceeds old max {:.1f}",
+			"entering generation {}: fitness {:.1f} exceeds old max {:.1f}",
 			current_generation + 1,
 			new_max_fitness,
 			max_fitness);
@@ -99,7 +99,7 @@ void Mutator::darwin(Simulation& sim, std::vector<Individual>& individuals)
 	else
 	{
 		spdlog::info(
-			"Did not enter new generation: fitness {:.1f} does not exceed old max {:.1f}",
+			"did not enter new generation: fitness {:.1f} does not exceed old max {:.1f}",
 			new_max_fitness,
 			max_fitness);
 	}
