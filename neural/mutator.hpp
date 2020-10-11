@@ -47,7 +47,7 @@ struct MutatorSettings
 	Fp conservative_gc_chance = 0.0;
 	Fp aggressive_gc_chance   = 0.0;
 
-	std::int32_t round_survivors = 10;
+	std::int32_t round_survivors = 20;
 
 	bool load_from_file();
 	bool save();
