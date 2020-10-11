@@ -12,4 +12,5 @@ class Checkpoint : public Body
 	std::size_t id;
 
 	sf::Vector2f origin;
+	sf::Vector2f p1, p2;
 };

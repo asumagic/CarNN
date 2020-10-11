@@ -135,6 +135,8 @@ void Simulation::load_checkpoints(const char* fname)
 			{
 				Checkpoint& cpb = unit.world.add_body<Checkpoint>(cp_bdef);
 				cpb.origin      = center;
+				cpb.p1          = p1;
+				cpb.p2          = p2;
 				cpb.id          = i++;
 				cpb.add_fixture(cp_fdef);
 

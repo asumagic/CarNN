@@ -185,14 +185,18 @@ float Car::fitness() const
 		return _fitness + _fitness_bias;
 	}
 
-	const auto pow2 = [](auto a) { return a * a; };
+	// this is extremely stupid but hey
 
-	const float body_distance = std::sqrt(
-		pow2(_target_checkpoint->origin.x - body_origin.x) + pow2(_target_checkpoint->origin.y - body_origin.y));
+	const float body_distance = std::min(
+		{distance(body_origin, _target_checkpoint->origin),
+		 distance(body_origin, _target_checkpoint->p1),
+		 distance(body_origin, _target_checkpoint->p2)});
 
-	const float checkpoint_distance = std::sqrt(
-		pow2(_target_checkpoint->origin.x - _latest_checkpoint->origin.x)
-		+ pow2(_target_checkpoint->origin.y - _latest_checkpoint->origin.y));
+	const float checkpoint_distance = std::max(
+		{distance(_target_checkpoint->p1, _latest_checkpoint->p1),
+		 distance(_target_checkpoint->p1, _latest_checkpoint->p2),
+		 distance(_target_checkpoint->p2, _latest_checkpoint->p1),
+		 distance(_target_checkpoint->p2, _latest_checkpoint->p2)});
 
 	const float normalized_distance = 1.0f - std::clamp(body_distance / checkpoint_distance, 0.0f, 1.0f);
 
