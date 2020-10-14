@@ -224,7 +224,6 @@ void App::frame()
 
 	if (ImGui::BeginMainMenuBar())
 	{
-		// FIXME: reimplement ups display using a different clock
 		ImGui::TextColored(
 			ImVec4(1.0, 1.0, 1.0, 0.5),
 			"%s",
