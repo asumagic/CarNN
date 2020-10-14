@@ -461,25 +461,25 @@ void App::reset_individuals()
 
 		individual.network = Network(total_rays + 4, 6);
 		_mutator.randomize(individual.network);
+		/*
+				auto& inputs  = individual.network.inputs().neurons;
+				auto& outputs = individual.network.outputs().neurons;
 
-		auto& inputs  = individual.network.inputs().neurons;
-		auto& outputs = individual.network.outputs().neurons;
+				inputs[0].label = "vector to objective (x)";
+				inputs[1].label = "vector to objective (y)";
+				inputs[2].label = "velocity (forward)";
+				inputs[3].label = "velocity (lateral)";
+				for (std::size_t lidar_index = 4; lidar_index < inputs.size(); ++lidar_index)
+				{
+					inputs[lidar_index].label = fmt::format("lidar #{}", lidar_index - 4 + 1);
+				}
 
-		inputs[0].label = "vector to objective (x)";
-		inputs[1].label = "vector to objective (y)";
-		inputs[2].label = "velocity (forward)";
-		inputs[3].label = "velocity (lateral)";
-		for (std::size_t lidar_index = 4; lidar_index < inputs.size(); ++lidar_index)
-		{
-			inputs[lidar_index].label = fmt::format("lidar #{}", lidar_index - 4 + 1);
-		}
-
-		outputs[Axon_Forward].label     = "Forward";
-		outputs[Axon_Backwards].label   = "Backwards";
-		outputs[Axon_Brake].label       = "Brake force";
-		outputs[Axon_Steer_Left].label  = "Left steering";
-		outputs[Axon_Steer_Right].label = "Right steering";
-		outputs[Axon_Drift].label       = "Drifting";
+				outputs[Axon_Forward].label     = "Forward";
+				outputs[Axon_Backwards].label   = "Backwards";
+				outputs[Axon_Brake].label       = "Brake force";
+				outputs[Axon_Steer_Left].label  = "Left steering";
+				outputs[Axon_Steer_Right].label = "Right steering";
+				outputs[Axon_Drift].label       = "Drifting";*/
 	}
 }
 

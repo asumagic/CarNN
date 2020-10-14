@@ -1,5 +1,6 @@
 #pragma once
 
+#include "activationmethod.hpp"
 #include "synapse.hpp"
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
@@ -8,22 +9,12 @@
 
 class Network;
 
-enum class ActivationMethod
-{
-	Sigmoid,
-	LeakyRelu,
-	Sin,
-
-	Total
-};
-
 struct Neuron
 {
 	double           partial_activation = 0.0;
 	double           value;
 	double           bias              = 0.0;
 	ActivationMethod activation_method = ActivationMethod::Sigmoid;
-	std::string      label;
 
 	std::vector<Synapse> synapses;
 
@@ -33,10 +24,6 @@ struct Neuron
 	template<class Archive>
 	void serialize(Archive& ar)
 	{
-		ar(CEREAL_NVP(partial_activation),
-		   CEREAL_NVP(bias),
-		   CEREAL_NVP(activation_method),
-		   CEREAL_NVP(label),
-		   CEREAL_NVP(synapses));
+		ar(CEREAL_NVP(partial_activation), CEREAL_NVP(bias), CEREAL_NVP(activation_method), CEREAL_NVP(synapses));
 	}
 };

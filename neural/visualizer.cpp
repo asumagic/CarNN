@@ -64,23 +64,13 @@ void Visualizer::display(sf::RenderTarget& target, sf::Font& font)
 
 			target.draw(shape);
 
-			// label
-			std::string label;
-			if (!neuron.label.empty())
-			{
-				label += fmt::format("{}\n", neuron.label);
-			}
-
 			const std::array<const char*, 3> activation_method_names{"sigmoid", "leaky RELU", "sin"};
-
-			label += fmt::format(
-				"{}\nbias: {:.01f}", activation_method_names[int(neuron.activation_method)], neuron.bias);
 
 			sf::Text text;
 			text.setFont(font);
 			text.setCharacterSize(16);
 			text.setPosition(origin);
-			text.setString(label);
+			text.setString(fmt::format("{}\nbias: {:.01f}", name(neuron.activation_method), neuron.bias));
 			target.draw(text);
 		}
 	}

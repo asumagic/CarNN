@@ -19,6 +19,7 @@ add_executable(${PROJECT_NAME}
 	entities/car.cpp
 	entities/checkpoint.cpp
 	entities/wheel.cpp
+	neural/activationmethod.cpp
 	neural/mutator.cpp
 	neural/network.cpp
 	neural/neuron.cpp
