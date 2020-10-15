@@ -317,15 +317,6 @@ void App::frame()
 			ImGui::PopID();
 			ImGui::Separator();
 
-			ImGui::Text("Network simplifier");
-			ImGui::PushID("Net");
-			ImGui::SliderFloat(
-				"Synapse destruction chance", &_mutator.settings.synapse_destruction_chance, 0.00, 0.99, "%.3f");
-			ImGui::SliderFloat("Conservative GC chance", &_mutator.settings.conservative_gc_chance, 0.00, 1.0, "%.3f");
-			ImGui::SliderFloat("Aggressive GC chance", &_mutator.settings.aggressive_gc_chance, 0.00, 1.0, "%.3f");
-			ImGui::PopID();
-			ImGui::Separator();
-
 			ImGui::SliderInt("Survivors per round", &_mutator.settings.round_survivors, 1, 100);
 		}
 
@@ -409,10 +400,10 @@ void App::tick(Individual& individual)
 	}
 	else*/
 	{
-		c.set_drift(static_cast<float>(results.neurons[Axon_Drift].value));
-		c.steer(static_cast<float>(results.neurons[Axon_Steer_Right].value - results.neurons[Axon_Steer_Left].value));
-		c.accelerate(static_cast<float>(results.neurons[Axon_Forward].value - results.neurons[Axon_Backwards].value));
-		c.brake(results.neurons[Axon_Brake].value);
+		c.set_drift(static_cast<float>(results[Axon_Drift].value));
+		c.steer(static_cast<float>(results[Axon_Steer_Right].value - results[Axon_Steer_Left].value));
+		c.accelerate(static_cast<float>(results[Axon_Forward].value - results[Axon_Backwards].value));
+		c.brake(results[Axon_Brake].value);
 	}
 }
 

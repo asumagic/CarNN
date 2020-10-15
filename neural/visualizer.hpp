@@ -2,19 +2,19 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "neuronid.hpp"
+#include "network.hpp"
 
 class Network;
 
 class Visualizer
 {
-public:
-    Visualizer(const Network& network);
+	public:
+	Visualizer(const Network& network);
 
-    void display(sf::RenderTarget& target, sf::Font& font);
+	void display(sf::RenderTarget& target, sf::Font& font);
 
-    private:
-    sf::Vector2f neuron_offset(NeuronId id);
+	private:
+	sf::Vector2f neuron_offset(NeuronPosition pos);
 
-    const Network* _network;
+	const Network* _network;
 };

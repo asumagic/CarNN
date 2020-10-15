@@ -313,22 +313,22 @@ void Car::compute_raycasts()
 
 void Car::update_inputs(Network& n)
 {
-	auto& inputs = n.inputs();
+	auto inputs = n.inputs();
 
-	assert(inputs.neurons.size() == _ray_distances.size() + 4);
+	assert(inputs.size() == _ray_distances.size() + 4);
 
 	std::size_t i = 0;
 
 	b2Vec2 objective_dir = 0.5f * direction_to_objective() + b2Vec2(0.5f, 0.5f);
 
 	// inputs.neurons[i++].value = _net_feedback;
-	inputs.neurons[i++].partial_activation = objective_dir.x;
-	inputs.neurons[i++].partial_activation = objective_dir.y;
-	inputs.neurons[i++].partial_activation = lerp(0.0, 1.0, forward_velocity().Length() / 6.0f);
-	inputs.neurons[i++].partial_activation = lerp(0.0, 1.0, lateral_velocity().Length() / 1.0f);
+	inputs[i++].partial_activation = objective_dir.x;
+	inputs[i++].partial_activation = objective_dir.y;
+	inputs[i++].partial_activation = lerp(0.0, 1.0, forward_velocity().Length() / 6.0f);
+	inputs[i++].partial_activation = lerp(0.0, 1.0, lateral_velocity().Length() / 1.0f);
 
 	for (std::size_t j = 0; j < _ray_distances.size(); ++j, ++i)
 	{
-		inputs.neurons[i].partial_activation = _ray_distances[j];
+		inputs[i].partial_activation = _ray_distances[j];
 	}
 }

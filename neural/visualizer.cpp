@@ -6,7 +6,7 @@
 #include <random>
 
 constexpr float layer_padding       = 256.0f;
-constexpr float neuron_area         = 1200.0f;
+constexpr float neuron_area         = 700.0f;
 constexpr float hidden_layer_jitter = 160.0f;
 
 constexpr float neuron_radius = 12.0f;
@@ -15,25 +15,25 @@ Visualizer::Visualizer(const Network& network) : _network(&network) {}
 
 void Visualizer::display(sf::RenderTarget& target, sf::Font& font)
 {
-	const sf::Vector2f global_origin(16.0f, 128.0f);
+	const sf::Vector2f global_origin(16.0f, 32.0f);
 
 	const sf::Color inactive_color(255, 50, 0), active_color(0, 255, 50);
 
-	for (std::size_t layer_id = 0; layer_id < _network->layers.size(); ++layer_id)
+	for (std::size_t layer_id = 0; layer_id < _network->layers().size(); ++layer_id)
 	{
-		const Layer& layer = _network->layers[layer_id];
-		for (std::size_t neuron_id = 0; neuron_id < layer.neurons.size(); ++neuron_id)
+		const auto layer = _network->layers()[layer_id];
+		for (std::size_t neuron_id = 0; neuron_id < layer.size(); ++neuron_id)
 		{
-			const Neuron& neuron = layer.neurons[neuron_id];
+			const Neuron& neuron = layer[neuron_id];
 
 			sf::Vector2f origin = global_origin + neuron_offset({layer_id, neuron_id});
 
 			// synapses
 			for (std::size_t synapse_id = 0; synapse_id < neuron.synapses.size(); ++synapse_id)
 			{
-				const Synapse& synapse = neuron.synapses[synapse_id];
+				const Synapse& synapse = _network->synapses[neuron.synapses[synapse_id]];
 
-				sf::Vector2f target_origin = global_origin + neuron_offset(synapse.target);
+				sf::Vector2f target_origin = global_origin + neuron_offset(_network->neuron_position(synapse.target));
 
 				std::uint8_t alpha = lerp(255u, 64u, std::abs(synapse.weight) * 4.0);
 
@@ -64,31 +64,30 @@ void Visualizer::display(sf::RenderTarget& target, sf::Font& font)
 
 			target.draw(shape);
 
-			const std::array<const char*, 3> activation_method_names{"sigmoid", "leaky RELU", "sin"};
-
 			sf::Text text;
 			text.setFont(font);
 			text.setCharacterSize(16);
 			text.setPosition(origin);
-			text.setString(fmt::format("{}\nbias: {:.01f}", name(neuron.activation_method), neuron.bias));
+			text.setString(fmt::format(
+				"{}\nbias: {:.01f}\nevoid: {}", name(neuron.activation_method), neuron.bias, neuron.evolution_id));
 			target.draw(text);
 		}
 	}
 }
 
-sf::Vector2f Visualizer::neuron_offset(NeuronId id)
+sf::Vector2f Visualizer::neuron_offset(NeuronPosition pos)
 {
 	float jitter = 0.0f;
 
-	if (id.layer() == 1)
+	if (pos.layer == 1)
 	{
-		std::mt19937                   mt(1337 + id.neuron_in_layer());
+		std::mt19937                   mt(pos.neuron_in_layer);
 		std::uniform_real_distribution dist(-hidden_layer_jitter, hidden_layer_jitter);
 
 		jitter = dist(mt);
 	}
 
 	return {
-		std::round(float(id.layer()) * layer_padding + jitter),
-		std::round(float(id.neuron_in_layer()) / float(_network->layers[id.layer()].neurons.size()) * neuron_area)};
+		std::round(float(pos.layer) * layer_padding + jitter),
+		std::round(float(pos.neuron_in_layer) / float(_network->layers()[pos.layer].size()) * neuron_area)};
 }

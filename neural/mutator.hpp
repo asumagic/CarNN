@@ -42,8 +42,6 @@ struct MutatorSettings
 	Fp neuron_creation_chance          = 0.1;
 	Fp extra_synapse_connection_chance = 0.5;
 
-	Fp synapse_destruction_chance = 0.1;
-
 	Fp conservative_gc_chance = 0.0;
 	Fp aggressive_gc_chance   = 0.0;
 
@@ -73,11 +71,6 @@ struct MutatorSettings
 		   CEREAL_NVP(neuron_creation_chance),
 		   CEREAL_NVP(extra_synapse_connection_chance),
 
-		   CEREAL_NVP(synapse_destruction_chance),
-
-		   CEREAL_NVP(conservative_gc_chance),
-		   CEREAL_NVP(aggressive_gc_chance),
-
 		   CEREAL_NVP(round_survivors));
 	}
 };
@@ -92,13 +85,16 @@ class Mutator
 
 	std::size_t current_generation = 0;
 
-	Network cross(const Network& a, const Network& b);
+	// TODO: less obviously magic value. this is because inputs and outputs have hardcoded ids so let's give them some
+	//       space
+	std::uint32_t current_evolution_id = 10000;
+
+	Network cross(Network a, const Network& b);
 
 	void darwin(Simulation& sim, std::vector<Individual>& results);
 
 	void create_random_neuron(Network& network);
 	void create_random_synapse(Network& network);
-	void destroy_random_synapse(Network& network);
 
 	void mutate(Network& network);
 
@@ -108,5 +104,5 @@ class Mutator
 
 	ActivationMethod random_activation_method();
 
-	void gc(Network& network, bool aggressive);
+	std::uint32_t get_unique_evolution_id();
 };

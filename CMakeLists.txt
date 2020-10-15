@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(CarNN)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-Og -g -fsanitize=address")
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17")
 
 find_package(SFML 2 COMPONENTS graphics REQUIRED)
@@ -14,6 +14,7 @@ find_package(fmt CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(cereal CONFIG REQUIRED)
 find_package(TBB CONFIG REQUIRED)
+find_package(Microsoft.GSL CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
 	entities/car.cpp
@@ -42,4 +43,5 @@ target_link_libraries(${PROJECT_NAME}
 	spdlog::spdlog
 	cereal
 	TBB::tbb
+	Microsoft.GSL::GSL
 )
