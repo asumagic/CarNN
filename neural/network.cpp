@@ -44,6 +44,38 @@ gsl::span<const Neuron> Network::hidden_layer() const
 
 gsl::span<const Neuron> Network::outputs() const { return {neurons.data() + _input_count, _output_count}; }
 
+void Network::merge_with(const Network& other)
+{
+	// create missing neurons first (which are necessarily in the hidden layer).
+	for (const Neuron& foreign_neuron : other.hidden_layer())
+	{
+		const NeuronId potential_match_id = get_neuron_id(foreign_neuron.evolution_id);
+
+		if (potential_match_id == neurons.size()) // TODO: less garbage interface for this
+		{
+			Neuron clone = foreign_neuron;
+			clone.synapses.clear();
+			neurons.push_back(clone);
+		}
+	}
+
+	// clone all b synapses
+	for (const Neuron& foreign_neuron : other.neurons)
+	{
+		for (const SynapseId& foreign_synapse_id : foreign_neuron.synapses)
+		{
+			const NeuronId source_neuron_id = get_neuron_id(foreign_neuron.evolution_id);
+			const NeuronId target_neuron_id
+				= get_neuron_id(other.neurons[other.synapses[foreign_synapse_id].target].evolution_id);
+
+			const SynapseId cloned_synapse_id = create_synapse(source_neuron_id, target_neuron_id);
+			Synapse&        cloned_synapse    = synapses[cloned_synapse_id];
+
+			cloned_synapse.weight = other.synapses[foreign_synapse_id].weight;
+		}
+	}
+}
+
 NeuronPosition Network::neuron_position(NeuronId id) const
 {
 	if (id < _input_count)

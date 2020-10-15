@@ -45,6 +45,8 @@ class Network
 	gsl::span<const Neuron>                outputs() const;
 	std::array<gsl::span<const Neuron>, 3> layers() const;
 
+	void merge_with(const Network& other);
+
 	NeuronPosition neuron_position(NeuronId id) const;
 
 	SynapseId          create_synapse(NeuronId from, NeuronId to);

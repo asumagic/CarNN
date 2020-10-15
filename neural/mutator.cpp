@@ -16,39 +16,7 @@ Network Mutator::cross(Network a, const Network& b)
 	assert(a.is_valid());
 	assert(b.is_valid());
 
-	std::size_t old_neuron_count = a.neurons.size();
-
-	// create missing neurons first (which are necessarily in the hidden layer).
-	for (const Neuron& foreign_neuron : b.hidden_layer())
-	{
-		const NeuronId potential_match_id = a.get_neuron_id(foreign_neuron.evolution_id);
-
-		if (potential_match_id == a.neurons.size()) // TODO: less garbage interface for this
-		{
-			Neuron clone = foreign_neuron;
-			clone.synapses.clear();
-			a.neurons.push_back(clone);
-		}
-	}
-
-	// for ALL b neurons, look up for synapses that connect (from or to) neurons that were inserted in the hidden layer
-	// just before.
-	for (const Neuron& foreign_neuron : b.neurons)
-	{
-		for (const SynapseId& foreign_synapse_id : foreign_neuron.synapses)
-		{
-			const auto source_neuron_id = a.get_neuron_id(foreign_neuron.evolution_id);
-			const auto target_neuron_id
-				= a.get_neuron_id(b.neurons[b.synapses[foreign_synapse_id].target].evolution_id);
-
-			// if a neuron's id within a.neurons is >= old_neuron_count, we know that it was created by the previous
-			// loop.
-			if (target_neuron_id >= old_neuron_count || source_neuron_id >= old_neuron_count)
-			{
-				a.create_synapse(source_neuron_id, target_neuron_id);
-			}
-		}
-	}
+	a.merge_with(b);
 
 	return a;
 }

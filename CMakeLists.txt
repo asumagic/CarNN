@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(CarNN)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-Og -g -fsanitize=address")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto")
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17")
 
 find_package(SFML 2 COMPONENTS graphics REQUIRED)
