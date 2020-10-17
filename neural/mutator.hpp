@@ -12,15 +12,6 @@ struct Synapse;
 class Simulation;
 struct Individual;
 
-enum class InitialTopology
-{
-	FullyConnected,
-	PartiallyConnected,
-	DisconnectedWithRandomNeurons,
-
-	Total
-};
-
 struct MutatorSettings
 {
 	using Fp = float;
@@ -39,8 +30,10 @@ struct MutatorSettings
 
 	Fp activation_mutation_chance = 0.3;
 
-	Fp neuron_creation_chance          = 0.1;
-	Fp extra_synapse_connection_chance = 0.5;
+	Fp            neuron_creation_chance              = 0.1;
+	std::uint32_t max_extra_synapses                  = 10;
+	Fp            hybridization_chance                = 0.2;
+	std::uint32_t max_hybridization_divergence_factor = 2;
 
 	Fp conservative_gc_chance = 0.0;
 	Fp aggressive_gc_chance   = 0.0;
@@ -69,7 +62,9 @@ struct MutatorSettings
 		   CEREAL_NVP(activation_mutation_chance),
 
 		   CEREAL_NVP(neuron_creation_chance),
-		   CEREAL_NVP(extra_synapse_connection_chance),
+		   CEREAL_NVP(max_extra_synapses),
+		   CEREAL_NVP(hybridization_chance),
+		   CEREAL_NVP(max_hybridization_divergence_factor),
 
 		   CEREAL_NVP(round_survivors));
 	}

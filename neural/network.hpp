@@ -45,22 +45,15 @@ class Network
 	gsl::span<const Neuron>                outputs() const;
 	std::array<gsl::span<const Neuron>, 3> layers() const;
 
-	void merge_with(const Network& other);
-
 	NeuronPosition neuron_position(NeuronId id) const;
 
-	SynapseId          create_synapse(NeuronId from, NeuronId to);
-	[[nodiscard]] bool is_valid_synapse(SynapseId id) const;
+	Synapse&               create_synapse(NeuronId from, NeuronId to);
+	Synapse&               get_or_create_synapse(NeuronId from, NeuronId to);
+	[[nodiscard]] Synapse* get_synapse(NeuronId from, NeuronId to);
+	[[nodiscard]] NeuronId get_neuron_id(std::uint32_t evolution_id) const;
 
-	NeuronId           get_neuron_id(std::uint32_t evolution_id) const;
-	[[nodiscard]] bool is_valid_neuron(NeuronId id) const;
-
-	std::size_t neuron_count(std::size_t first_layer, std::size_t last_layer);
-	NeuronId    random_neuron(std::size_t first_layer, std::size_t last_layer);
-
-	SynapseId random_synapse();
-
-	[[nodiscard]] bool is_valid() const;
+	[[nodiscard]] NeuronId  random_neuron();
+	[[nodiscard]] SynapseId random_synapse();
 
 	std::vector<Neuron>  neurons;
 	std::vector<Synapse> synapses;

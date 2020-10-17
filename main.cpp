@@ -312,8 +312,7 @@ void App::frame()
 			ImGui::Text("Neuron creation");
 			ImGui::PushID("Neuron");
 			ImGui::SliderFloat("Chance", &_mutator.settings.neuron_creation_chance, 0.00, 0.99, "%.3f");
-			ImGui::SliderFloat(
-				"Extra synapse chance", &_mutator.settings.extra_synapse_connection_chance, 0.00, 0.99, "%.3f");
+			// FIXME: new sliders needed
 			ImGui::PopID();
 			ImGui::Separator();
 

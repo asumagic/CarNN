@@ -16,13 +16,3 @@ void Neuron::compute_value()
 	default: break;
 	}
 }
-
-void Neuron::propagate_forward(Network& network)
-{
-	for (SynapseId id : synapses)
-	{
-		const Synapse& synapse        = network.synapses[id];
-		Neuron&        forward_neuron = network.neurons[synapse.target];
-		forward_neuron.partial_activation += value * synapse.weight;
-	}
-}

@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-enum class ActivationMethod
+enum class ActivationMethod : std::uint8_t
 {
 	Sigmoid,
 	LeakyRelu,

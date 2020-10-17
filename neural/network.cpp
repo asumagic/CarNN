@@ -44,37 +44,7 @@ gsl::span<const Neuron> Network::hidden_layer() const
 
 gsl::span<const Neuron> Network::outputs() const { return {neurons.data() + _input_count, _output_count}; }
 
-void Network::merge_with(const Network& other)
-{
-	// create missing neurons first (which are necessarily in the hidden layer).
-	for (const Neuron& foreign_neuron : other.hidden_layer())
-	{
-		const NeuronId potential_match_id = get_neuron_id(foreign_neuron.evolution_id);
-
-		if (potential_match_id == neurons.size()) // TODO: less garbage interface for this
-		{
-			Neuron clone = foreign_neuron;
-			clone.synapses.clear();
-			neurons.push_back(clone);
-		}
-	}
-
-	// clone all b synapses
-	for (const Neuron& foreign_neuron : other.neurons)
-	{
-		for (const SynapseId& foreign_synapse_id : foreign_neuron.synapses)
-		{
-			const NeuronId source_neuron_id = get_neuron_id(foreign_neuron.evolution_id);
-			const NeuronId target_neuron_id
-				= get_neuron_id(other.neurons[other.synapses[foreign_synapse_id].target].evolution_id);
-
-			const SynapseId cloned_synapse_id = create_synapse(source_neuron_id, target_neuron_id);
-			Synapse&        cloned_synapse    = synapses[cloned_synapse_id];
-
-			cloned_synapse.weight = other.synapses[foreign_synapse_id].weight;
-		}
-	}
-}
+std::array<gsl::span<const Neuron>, 3> Network::layers() const { return {inputs(), hidden_layer(), outputs()}; }
 
 NeuronPosition Network::neuron_position(NeuronId id) const
 {
@@ -93,47 +63,42 @@ NeuronPosition Network::neuron_position(NeuronId id) const
 	return {1, id};
 }
 
-SynapseId Network::create_synapse(NeuronId from, NeuronId to)
+Synapse& Network::create_synapse(NeuronId from, NeuronId to)
 {
-	Synapse&        synapse = synapses.emplace_back();
-	const SynapseId id      = synapses.size() - 1;
-
-	neurons[from].synapses.push_back(id);
-	synapse.target = to;
-
-	return id;
+	Synapse& synapse = synapses.emplace_back();
+	synapse.source   = from;
+	synapse.target   = to;
+	return synapse;
 }
 
-bool Network::is_valid_synapse(SynapseId id) const
+Synapse& Network::get_or_create_synapse(NeuronId from, NeuronId to)
 {
-	return id < synapses.size() && synapses[id].target < neurons.size();
+	if (Synapse* synapse = get_synapse(from, to); synapse != nullptr)
+	{
+		return *synapse;
+	}
+
+	return create_synapse(from, to);
+}
+
+Synapse* Network::get_synapse(NeuronId from, NeuronId to)
+{
+	const auto it = std::find_if(synapses.begin(), synapses.end(), [&](const Synapse& synapse) {
+		return synapse.source == from && synapse.target == to;
+	});
+
+	if (it == synapses.end())
+	{
+		return nullptr;
+	}
+
+	return &*it;
 }
 
 NeuronId Network::get_neuron_id(uint32_t evolution_id) const
 {
 	const auto it = std::find(neurons.begin(), neurons.end(), evolution_id);
 	return std::distance(neurons.begin(), it);
-}
-
-bool Network::is_valid_neuron(NeuronId id) const
-{
-	if (id >= neurons.size())
-	{
-		return false;
-	}
-
-	const Neuron& neuron = neurons[id];
-	return std::all_of(
-		neuron.synapses.begin(), neuron.synapses.end(), [this](SynapseId id) { return is_valid_synapse(id); });
-}
-
-std::array<gsl::span<const Neuron>, 3> Network::layers() const
-{
-	return {
-		inputs(),
-		hidden_layer(),
-		outputs(),
-	};
 }
 
 void Network::update()
@@ -144,9 +109,9 @@ void Network::update()
 		neuron.partial_activation = 0.0;
 	}
 
-	for (Neuron& neuron : neurons)
+	for (Synapse& synapse : synapses)
 	{
-		neuron.propagate_forward(*this);
+		neurons[synapse.target].partial_activation += neurons[synapse.source].value * synapse.properties.weight;
 	}
 
 	for (Neuron& neuron : outputs())
@@ -164,34 +129,6 @@ void Network::reset_values()
 	}
 }
 
-std::size_t Network::neuron_count(std::size_t first_layer, std::size_t last_layer)
-{
-	std::size_t sum = 0;
-
-	for (std::size_t i = first_layer; i <= last_layer; ++i)
-	{
-		sum += layers()[i].size();
-	}
-
-	return sum;
-}
-
-NeuronId Network::random_neuron(std::size_t first_layer, std::size_t last_layer)
-{
-	return NeuronId(random_int(0, neuron_count(first_layer, last_layer) - 1));
-}
+NeuronId Network::random_neuron() { return NeuronId(random_int(0, neurons.size() - 1)); }
 
 SynapseId Network::random_synapse() { return random_int(0, synapses.size() - 1); }
-
-bool Network::is_valid() const
-{
-	for (std::size_t i = 0; i < neurons.size(); ++i)
-	{
-		if (!is_valid_neuron(NeuronId(i)))
-		{
-			return false;
-		}
-	}
-
-	return true;
-}

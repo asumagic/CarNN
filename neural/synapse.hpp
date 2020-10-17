@@ -3,14 +3,25 @@
 #include "neuronid.hpp"
 #include <cereal/cereal.hpp>
 
-struct Synapse
+struct SynapseProperties
 {
-	NeuronId target;
-	double   weight;
+	double weight;
 
 	template<class Archive>
 	void serialize(Archive& ar)
 	{
-		ar(target, CEREAL_NVP(weight));
+		ar(CEREAL_NVP(weight));
+	}
+};
+
+struct Synapse
+{
+	NeuronId          source, target;
+	SynapseProperties properties;
+
+	template<class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(CEREAL_NVP(source), CEREAL_NVP(target), CEREAL_NVP(properties));
 	}
 };
