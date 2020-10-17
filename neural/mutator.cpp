@@ -204,6 +204,21 @@ ActivationMethod Mutator::random_activation_method()
 
 uint32_t Mutator::get_unique_evolution_id() { return ++current_evolution_id; }
 
+double Mutator::get_divergence_factor(const Network& a, const Network& b)
+{
+	double factor = 0.0;
+
+	for (const Neuron& neuron : a.hidden_layer())
+	{
+		if (b.get_neuron_id(neuron.evolution_id) == b.neurons.size())
+		{
+			factor += 1.0;
+		}
+	}
+
+	return factor;
+}
+
 bool MutatorSettings::load_from_file()
 {
 	spdlog::info("reloading mutator settings from file");

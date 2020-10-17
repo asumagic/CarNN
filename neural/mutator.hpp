@@ -105,4 +105,6 @@ class Mutator
 	ActivationMethod random_activation_method();
 
 	std::uint32_t get_unique_evolution_id();
+
+	double get_divergence_factor(const Network& a, const Network& b);
 };
