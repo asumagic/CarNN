@@ -20,9 +20,6 @@ class World
 	World& update();
 	World& render(sf::RenderTarget& target);
 
-	void  set_dt(const float dt);
-	float dt() const;
-
 	void update_view(sf::RenderTarget& target, sf::Vector2f origin, float czoom);
 
 	template<typename T = Body>
@@ -39,8 +36,6 @@ class World
 
 	private:
 	std::vector<std::unique_ptr<Body>> _bodies;
-
-	float _dt = 0.f;
 
 	b2Vec2  _gravity;
 	b2World _world;

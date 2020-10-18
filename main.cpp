@@ -491,10 +491,9 @@ void App::tick(SimulationUnit& unit)
 		tick(*car->individual);
 	}
 
-	unit.world.set_dt(1.0f / 30.0f);
-	unit.world.step(10.0f, 1, 1).update();
+	unit.world.step(10.0f / 30.0f, 1, 1).update();
 	++unit.ticks_elapsed;
-	unit.seconds_elapsed += unit.world.dt();
+	unit.seconds_elapsed += 1.0f / 30.0f;
 }
 
 void App::start_new_run()

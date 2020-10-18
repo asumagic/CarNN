@@ -10,7 +10,7 @@ Wheel::Wheel(World& world, const b2BodyDef bdef, const bool do_render) : Body(wo
 
 void Wheel::cancel_lateral_force(const float multiplier)
 {
-	float  mul     = multiplier * _world.dt() * 60.f;
+	float  mul     = multiplier * 60.f / 30.0f;
 	b2Vec2 impulse = _body->GetMass() * -lateral_velocity();
 	if (impulse.Length() > (_max_lateral_impulse * mul))
 		impulse *= (_max_lateral_impulse * mul) / impulse.Length();

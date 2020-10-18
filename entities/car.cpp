@@ -230,7 +230,7 @@ void Car::steer(float towards)
 	{
 		float desired_angle = lerp(-_angle_lock, _angle_lock, towards * 0.5 + 0.5);
 
-		float fspeed      = _turn_speed * _world.dt();
+		float fspeed      = _turn_speed / 30.0f;
 		float cangle      = _front_joints[i]->GetJointAngle();
 		float to_turn     = b2Clamp(desired_angle - cangle, -fspeed, fspeed);
 		float final_angle = cangle + to_turn;
