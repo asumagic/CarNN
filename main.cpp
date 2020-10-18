@@ -26,6 +26,13 @@ struct GuiWindows
 	bool draw_neural     = false;
 };
 
+enum class SimulationState
+{
+	Realtime,
+	Fast,
+	Paused
+};
+
 class App
 {
 	public:
@@ -51,8 +58,8 @@ class App
 
 	sf::RenderWindow _window;
 
-	Simulation _sim;
-	bool       _fast_simulation = false;
+	Simulation      _sim;
+	SimulationState _simulation_state;
 
 	std::vector<Individual> _population;
 
@@ -90,7 +97,23 @@ void App::run()
 
 	while (_window.isOpen())
 	{
-		advance_simulation(_fast_simulation ? 1000 : 1);
+		switch (_simulation_state)
+		{
+		case SimulationState::Realtime:
+		{
+			advance_simulation(1);
+			break;
+		}
+
+		case SimulationState::Fast:
+		{
+			advance_simulation(1000);
+		}
+
+		case SimulationState::Paused:
+		default: break;
+		}
+
 		frame();
 	}
 }
@@ -134,7 +157,7 @@ void App::advance_simulation(std::size_t ticks)
 
 void App::frame()
 {
-	_window.setFramerateLimit(!_fast_simulation ? 80 : 0);
+	_window.setFramerateLimit(_simulation_state != SimulationState::Fast ? 80 : 0);
 
 	const sf::Time frame_time = _frame_dt_clock.restart();
 
@@ -164,7 +187,8 @@ void App::frame()
 			}
 			else if (ev.key.code == sf::Keyboard::F)
 			{
-				_fast_simulation = !_fast_simulation;
+				_simulation_state
+					= _simulation_state == SimulationState::Fast ? SimulationState::Realtime : SimulationState::Fast;
 			}
 			else if (ev.key.code == sf::Keyboard::S)
 			{
@@ -245,7 +269,22 @@ void App::frame()
 	{
 		if (ImGui::Begin("Simulation", &_gui.simulation_open))
 		{
-			ImGui::Checkbox("Fast simulation", &_fast_simulation);
+			if (ImGui::RadioButton("Realtime", _simulation_state == SimulationState::Realtime))
+			{
+				_simulation_state = SimulationState::Realtime;
+			}
+
+			ImGui::SameLine();
+			if (ImGui::RadioButton("Fast", _simulation_state == SimulationState::Fast))
+			{
+				_simulation_state = SimulationState::Fast;
+			}
+
+			ImGui::SameLine();
+			if (ImGui::RadioButton("Pause", _simulation_state == SimulationState::Paused))
+			{
+				_simulation_state = SimulationState::Paused;
+			}
 
 			if (ImGui::Button("Mutate current pop."))
 			{
