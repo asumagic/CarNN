@@ -14,7 +14,7 @@ Network Mutator::cross(Network a, const Network& b)
 	// replace random synapses from a with ones from b
 	// FIXME: O(n²) disaster below
 	{
-		const auto random_synapse_count = std::size_t(a.synapses.size() * 0.2);
+		const auto random_synapse_count = std::size_t(a.synapses.size() * settings.max_imported_synapses_factor);
 		for (std::size_t i = 0; i < random_synapse_count; ++i)
 		{
 			Synapse& synapse = a.synapses[a.random_synapse()];
@@ -88,7 +88,7 @@ void Mutator::darwin(Simulation& sim, std::vector<Individual>& individuals)
 		max_fitness = new_max_fitness;
 		++current_generation;
 
-		for (std::size_t i = 0; i < settings.round_survivors; ++i)
+		for (std::size_t i = 0; i < std::size_t(settings.round_survivors); ++i)
 		{
 			individuals[i].survivor_from_last = true;
 		}

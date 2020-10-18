@@ -30,10 +30,12 @@ struct MutatorSettings
 
 	Fp activation_mutation_chance = 0.3;
 
-	Fp            neuron_creation_chance              = 0.1;
-	std::uint32_t max_extra_synapses                  = 10;
-	Fp            hybridization_chance                = 0.2;
-	std::uint32_t max_hybridization_divergence_factor = 2;
+	Fp           neuron_creation_chance = 0.1;
+	std::int32_t max_extra_synapses     = 10;
+
+	Fp max_imported_synapses_factor        = 0.2;
+	Fp hybridization_chance                = 0.2;
+	Fp max_hybridization_divergence_factor = 2.0;
 
 	Fp conservative_gc_chance = 0.0;
 	Fp aggressive_gc_chance   = 0.0;
@@ -63,6 +65,8 @@ struct MutatorSettings
 
 		   CEREAL_NVP(neuron_creation_chance),
 		   CEREAL_NVP(max_extra_synapses),
+
+		   CEREAL_NVP(max_imported_synapses_factor),
 		   CEREAL_NVP(hybridization_chance),
 		   CEREAL_NVP(max_hybridization_divergence_factor),
 

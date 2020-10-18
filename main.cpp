@@ -280,43 +280,82 @@ void App::frame()
 			}
 			ImGui::Separator();
 
+			const auto tooltip = [&](const char* text) {
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetNextWindowSize(ImVec2(800, -1));
+					ImGui::BeginTooltip();
+					ImGui::TextWrapped("%s", text);
+					ImGui::EndTooltip();
+				}
+			};
+
+			auto& cfg = _mutator.settings;
+
 			ImGui::Text("Bias");
 			ImGui::PushID("Bias");
-			ImGui::InputFloat("Initial stddev", &_mutator.settings.bias_initial_std_dev, 0.01, 0.1, "%.3f");
-			ImGui::InputFloat("Soft mutation stddev", &_mutator.settings.bias_mutation_factor, 0.01, 0.1, "%.3f");
-			ImGui::SliderFloat("Soft mutation chance", &_mutator.settings.bias_mutation_chance, 0.00, 0.99, "%.3f");
-			ImGui::InputFloat("Hard mutation stddev", &_mutator.settings.bias_hard_mutation_factor, 0.01, 0.1, "%.3f");
-			ImGui::SliderFloat(
-				"Hard mutation chance", &_mutator.settings.bias_hard_mutation_chance, 0.00, 0.99, "%.3f");
+			ImGui::InputFloat("Initial stddev", &cfg.bias_initial_std_dev, 0.01, 0.1, "%.3f");
+			ImGui::InputFloat("Soft mutation stddev", &cfg.bias_mutation_factor, 0.01, 0.1, "%.3f");
+			ImGui::SliderFloat("Soft mutation chance", &cfg.bias_mutation_chance, 0.00, 0.99, "%.3f");
+			ImGui::InputFloat("Hard mutation stddev", &cfg.bias_hard_mutation_factor, 0.01, 0.1, "%.3f");
+			ImGui::SliderFloat("Hard mutation chance", &cfg.bias_hard_mutation_chance, 0.00, 0.99, "%.3f");
 			ImGui::PopID();
 			ImGui::Separator();
 
 			ImGui::Text("Weight");
 			ImGui::PushID("Weight");
-			ImGui::InputFloat("Initial stddev", &_mutator.settings.weight_initial_std_dev, 0.01, 0.1, "%.3f");
-			ImGui::InputFloat("Soft mutation stddev", &_mutator.settings.weight_mutation_factor, 0.01, 0.1, "%.3f");
-			ImGui::SliderFloat("Soft mutation chance", &_mutator.settings.weight_mutation_chance, 0.00, 0.99, "%.3f");
-			ImGui::InputFloat(
-				"Hard mutation stddev", &_mutator.settings.weight_hard_mutation_factor, 0.01, 0.1, "%.3f");
-			ImGui::SliderFloat(
-				"Hard mutation chance", &_mutator.settings.weight_hard_mutation_chance, 0.00, 0.99, "%.3f");
+			ImGui::InputFloat("Initial stddev", &cfg.weight_initial_std_dev, 0.01, 0.1, "%.3f");
+			ImGui::InputFloat("Soft mutation stddev", &cfg.weight_mutation_factor, 0.01, 0.1, "%.3f");
+			ImGui::SliderFloat("Soft mutation chance", &cfg.weight_mutation_chance, 0.00, 0.99, "%.3f");
+			ImGui::InputFloat("Hard mutation stddev", &cfg.weight_hard_mutation_factor, 0.01, 0.1, "%.3f");
+			ImGui::SliderFloat("Hard mutation chance", &cfg.weight_hard_mutation_chance, 0.00, 0.99, "%.3f");
 			ImGui::PopID();
 			ImGui::Separator();
 
 			ImGui::Text("Activation method");
 			ImGui::PushID("Activation method");
-			ImGui::SliderFloat("Mutation chance", &_mutator.settings.activation_mutation_chance, 0.00, 0.99, "%.3f");
+			ImGui::SliderFloat("Mutation chance", &cfg.activation_mutation_chance, 0.00, 0.99, "%.3f");
 			ImGui::PopID();
 			ImGui::Separator();
 
 			ImGui::Text("Neuron creation");
 			ImGui::PushID("Neuron");
-			ImGui::SliderFloat("Chance", &_mutator.settings.neuron_creation_chance, 0.00, 0.99, "%.3f");
-			// FIXME: new sliders needed
+			ImGui::SliderFloat("Chance", &cfg.neuron_creation_chance, 0.00, 0.99, "%.3f");
+			ImGui::SliderInt("Max extra synapses", &cfg.max_extra_synapses, 0, 100);
+			ImGui::Separator();
+			ImGui::PopID();
+
+			ImGui::PushID("Crossing");
+			ImGui::Text("Genome crossing");
+			tooltip(
+				"When generating a new population, the mutator selects a random pair of individuals.\n"
+				"Their respective networks are then \"merged\" in order to generate a new individual.\n"
+				"The two individuals in the pair can be the same one, meaning self-breeding is allowed.\n"
+				"\n"
+				"Breeding is \"unfair\" in the way that the 2nd individual in the pair has less chance to have its "
+				"features imported into the new individual than the 1st.");
+
+			ImGui::SliderFloat("Max imported synapses factor", &cfg.max_imported_synapses_factor, 0.0, 1.0);
+			tooltip(
+				"Whether hybridization occurs or not, an amount of random synapses from the 2nd network will be copied "
+				"into the new individual.");
+
+			ImGui::SliderFloat("Hybridization chance", &cfg.hybridization_chance, 0.0, 0.99);
+			tooltip(
+				"Hybridization occurs when trying to cross two networks with a different topology.\n"
+				"In other words, given a breeding pair of networks (a, b), this is the chance that neurons present in "
+				"b (but not present in a) to be copied into the new individual.");
+
+			ImGui::SliderFloat("Max hybrid. divergence", &cfg.max_hybridization_divergence_factor, 0.0, 5.0);
+			tooltip(
+				"Defines the maximum possible divergence factor between two genomes for hybridization.\n"
+				"Currently, the divergence factor is equal to the difference in neuron count between two genomes.");
+
 			ImGui::PopID();
 			ImGui::Separator();
 
-			ImGui::SliderInt("Survivors per round", &_mutator.settings.round_survivors, 1, 100);
+			ImGui::SliderInt("Survivors per round", &cfg.round_survivors, 1, 100);
+			tooltip("The size of the interbreeding population to select at the end of each round.");
 		}
 
 		ImGui::End();
