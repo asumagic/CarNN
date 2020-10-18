@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
 
@@ -14,6 +15,16 @@ T lerp(T a, T b, float t)
 {
 	t = clamp(t, 0.0f, 1.0f);
 	return (1.f - t) * a + (t * b);
+}
+
+inline sf::Color lerp_rgb(sf::Color a, sf::Color b, float t)
+{
+	return {
+		lerp(a.r, b.r, t),
+		lerp(a.g, b.g, t),
+		lerp(a.b, b.b, t),
+		lerp(a.a, b.a, t),
+	};
 }
 
 template<class T>

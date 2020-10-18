@@ -28,16 +28,9 @@ void Visualizer::display(sf::RenderTarget& target, sf::Font& font)
 
 		std::uint8_t alpha = lerp(255u, 64u, std::abs(synapse.properties.weight) * 4.0);
 
-		sf::Color origin_color(
-			lerp(inactive_color.r, active_color.r, neuron.value),
-			lerp(inactive_color.g, active_color.g, neuron.value),
-			lerp(inactive_color.b, active_color.b, neuron.value),
-			alpha);
-		sf::Color target_color(
-			lerp(inactive_color.r, active_color.r, neuron.value * synapse.properties.weight),
-			lerp(inactive_color.g, active_color.g, neuron.value * synapse.properties.weight),
-			lerp(inactive_color.b, active_color.b, neuron.value * synapse.properties.weight),
-			alpha);
+		sf::Color origin_color = lerp_rgb(inactive_color, active_color, neuron.value);
+		sf::Color target_color = lerp_rgb(inactive_color, active_color, synapse.properties.weight);
+		origin_color.a = target_color.a = alpha;
 
 		std::array<sf::Vertex, 2> vertices{
 			sf::Vertex(source_origin, origin_color), sf::Vertex(target_origin, target_color)};
@@ -57,10 +50,7 @@ void Visualizer::display(sf::RenderTarget& target, sf::Font& font)
 			sf::CircleShape shape(neuron_radius, 16);
 
 			shape.setPosition(origin - sf::Vector2f(neuron_radius, neuron_radius));
-			shape.setFillColor(sf::Color(
-				lerp(inactive_color.r, active_color.r, neuron.value),
-				lerp(inactive_color.g, active_color.g, neuron.value),
-				lerp(inactive_color.b, active_color.b, neuron.value)));
+			shape.setFillColor(lerp_rgb(inactive_color, active_color, neuron.value));
 
 			target.draw(shape);
 
