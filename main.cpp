@@ -221,6 +221,25 @@ void App::frame()
 	_window.draw(_sim.wall_vertices.data(), _sim.wall_vertices.size(), sf::Lines);
 	for (auto& unit : _sim.units)
 	{
+		for (Individual& individual : _population)
+		{
+			Car& c = *_sim.cars[individual.car_id];
+
+			if (c.dead)
+			{
+				c.with_color(sf::Color{200, 0, 0, 60}, 255);
+			}
+
+			if (individual.survivor_from_last)
+			{
+				c.with_color(sf::Color{200, 50, 0, 200}, 255);
+			}
+			else
+			{
+				c.with_color(sf::Color{0, 0, 100, 40}, 255);
+			}
+		}
+
 		unit.world.render(_window);
 	}
 
@@ -414,17 +433,7 @@ void App::tick(Individual& individual)
 
 	if (c.dead)
 	{
-		c.with_color(sf::Color{200, 0, 0, 60}, 255);
 		return;
-	}
-
-	if (individual.survivor_from_last)
-	{
-		c.with_color(sf::Color{200, 50, 0, 200}, 255);
-	}
-	else
-	{
-		c.with_color(sf::Color{0, 0, 100, 40}, 255);
 	}
 
 	c.set_target_checkpoint(c.unit->checkpoints.at(c.reached_checkpoints() % c.unit->checkpoints.size()));
