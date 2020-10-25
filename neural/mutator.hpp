@@ -1,8 +1,8 @@
 #pragma once
 
-#include "neuron.hpp"
+#include "activationmethod.hpp"
 #include <cereal/cereal.hpp>
-#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 class Network;

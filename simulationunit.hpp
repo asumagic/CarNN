@@ -4,8 +4,6 @@
 #include "entities/checkpoint.hpp"
 #include "world.hpp"
 
-#include <thread>
-
 class SimulationUnit
 {
 	public:

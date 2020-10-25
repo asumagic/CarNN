@@ -1,19 +1,11 @@
 #pragma once
 
-#include "../maths.hpp"
 #include "neuron.hpp"
 #include "synapse.hpp"
 #include "synapseid.hpp"
-#include <array>
-#include <cassert>
-#include <cereal/types/array.hpp>
 #include <cereal/types/vector.hpp>
-#include <cmath>
 #include <gsl/span>
-#include <iosfwd>
 #include <vector>
-
-class Car;
 
 struct Neuron;
 class Network;

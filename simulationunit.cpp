@@ -7,6 +7,7 @@
 #include <json/reader.h>
 #include <json/value.h>
 #include <spdlog/spdlog.h>
+#include <thread>
 
 Simulation::Simulation() : units(std::thread::hardware_concurrency())
 {
