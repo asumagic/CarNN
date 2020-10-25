@@ -17,19 +17,19 @@ find_package(TBB CONFIG REQUIRED)
 find_package(Microsoft.GSL CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
-	entities/car.cpp
-	entities/checkpoint.cpp
-	entities/wheel.cpp
-	neural/activationmethod.cpp
-	neural/mutator.cpp
-	neural/network.cpp
-	neural/neuron.cpp
-	neural/visualizer.cpp
-	body.cpp
-	main.cpp
-	randomutil.cpp
-	simulationunit.cpp
-	world.cpp
+	src/entities/car.cpp
+	src/entities/checkpoint.cpp
+	src/entities/wheel.cpp
+	src/neural/activationmethod.cpp
+	src/neural/mutator.cpp
+	src/neural/network.cpp
+	src/neural/neuron.cpp
+	src/neural/visualizer.cpp
+	src/body.cpp
+	src/main.cpp
+	src/randomutil.cpp
+	src/simulationunit.cpp
+	src/world.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
