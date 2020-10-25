@@ -1,7 +1,7 @@
 #pragma once
 
-#include "neuronid.hpp"
-#include "types.hpp"
+#include <carnn/neural/neuronid.hpp>
+#include <carnn/neural/types.hpp>
 #include <cereal/cereal.hpp>
 
 struct SynapseProperties

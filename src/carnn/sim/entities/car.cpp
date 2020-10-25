@@ -1,10 +1,10 @@
-#include "car.hpp"
-#include "../maths.hpp"
-#include "../neural/network.hpp"
-#include "../world.hpp"
-#include "checkpoint.hpp"
-#include "wheel.hpp"
-#include <iostream>
+#include <carnn/sim/entities/car.hpp>
+
+#include <carnn/neural/network.hpp>
+#include <carnn/sim/entities/checkpoint.hpp>
+#include <carnn/sim/entities/wheel.hpp>
+#include <carnn/sim/world.hpp>
+#include <carnn/util/maths.hpp>
 
 void CarCheckpointListener::BeginContact(b2Contact* contact)
 {

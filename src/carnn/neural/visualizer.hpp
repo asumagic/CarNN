@@ -1,8 +1,7 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
-
-#include "network.hpp"
+#include <carnn/neural/network.hpp>
 
 class Network;
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "neuron.hpp"
-#include "synapse.hpp"
-#include "synapseid.hpp"
+#include <carnn/neural/neuron.hpp>
+#include <carnn/neural/synapse.hpp>
+#include <carnn/neural/synapseid.hpp>
 #include <cereal/types/vector.hpp>
 #include <gsl/span>
 #include <vector>

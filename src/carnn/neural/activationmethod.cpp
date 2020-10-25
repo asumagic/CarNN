@@ -1,4 +1,4 @@
-#include "activationmethod.hpp"
+#include <carnn/neural/activationmethod.hpp>
 
 std::string_view name(ActivationMethod method)
 {

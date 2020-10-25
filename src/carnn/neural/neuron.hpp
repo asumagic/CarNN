@@ -1,7 +1,7 @@
 #pragma once
 
-#include "activationmethod.hpp"
-#include "types.hpp"
+#include <carnn/neural/activationmethod.hpp>
+#include <carnn/neural/types.hpp>
 #include <cereal/cereal.hpp>
 
 class Network;

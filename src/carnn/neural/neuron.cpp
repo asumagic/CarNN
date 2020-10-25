@@ -1,8 +1,7 @@
-#include "neuron.hpp"
+#include <carnn/neural/neuron.hpp>
 
-#include "../maths.hpp"
-#include "mutator.hpp"
-#include "network.hpp"
+#include <carnn/training/mutator.hpp>
+#include <carnn/util/maths.hpp>
 
 void Neuron::compute_value()
 {

@@ -1,10 +1,11 @@
 #pragma once
 
-#include "network.hpp"
+#include <carnn/neural/network.hpp>
+#include <cstdint>
 
 struct Individual
 {
-	std::size_t car_id = 0;
+	std::uint32_t car_id = 0;
 
 	Network network;
 
@@ -14,6 +15,6 @@ struct Individual
 	template<class Archive>
 	void serialize(Archive& ar)
 	{
-		ar(network, survivor_from_last, last_fitness);
+		ar(car_id, network, survivor_from_last, last_fitness);
 	}
 };

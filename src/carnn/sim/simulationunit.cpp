@@ -1,8 +1,8 @@
-#include "simulationunit.hpp"
+#include <carnn/sim/simulationunit.hpp>
 
-#include "entities/car.hpp"
-#include "line.hpp"
-#include "world.hpp"
+#include <carnn/sim/entities/car.hpp>
+#include <carnn/sim/world.hpp>
+#include <carnn/util/line.hpp>
 #include <fstream>
 #include <json/reader.h>
 #include <json/value.h>

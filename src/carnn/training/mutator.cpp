@@ -1,10 +1,10 @@
-#include "mutator.hpp"
+#include <carnn/training/mutator.hpp>
 
-#include "../entities/car.hpp"
-#include "../neural/network.hpp"
-#include "../randomutil.hpp"
-#include "../simulationunit.hpp"
-#include "individual.hpp"
+#include <carnn/neural/network.hpp>
+#include <carnn/sim/entities/car.hpp>
+#include <carnn/sim/individual.hpp>
+#include <carnn/sim/simulationunit.hpp>
+#include <carnn/util/random.hpp>
 #include <cereal/archives/json.hpp>
 #include <fstream>
 #include <spdlog/spdlog.h>

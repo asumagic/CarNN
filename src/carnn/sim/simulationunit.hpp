@@ -1,8 +1,8 @@
 #pragma once
 
-#include "entities/car.hpp"
-#include "entities/checkpoint.hpp"
-#include "world.hpp"
+#include <carnn/sim/entities/car.hpp>
+#include <carnn/sim/entities/checkpoint.hpp>
+#include <carnn/sim/world.hpp>
 
 class SimulationUnit
 {

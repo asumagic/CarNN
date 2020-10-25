@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../body.hpp"
+#include <carnn/sim/entities/body.hpp>
 
 class Car;
 

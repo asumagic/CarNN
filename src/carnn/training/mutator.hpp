@@ -1,6 +1,6 @@
 #pragma once
 
-#include "activationmethod.hpp"
+#include <carnn/neural/activationmethod.hpp>
 #include <cereal/cereal.hpp>
 #include <cstdint>
 #include <vector>

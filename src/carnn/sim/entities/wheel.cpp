@@ -1,7 +1,7 @@
-#include "wheel.hpp"
+#include <carnn/sim/entities/wheel.hpp>
 
-#include "../maths.hpp"
-#include "../world.hpp"
+#include <carnn/sim/world.hpp>
+#include <carnn/util/maths.hpp>
 
 Wheel::Wheel(World& world, const b2BodyDef bdef, const bool do_render) : Body(world, bdef, do_render)
 {

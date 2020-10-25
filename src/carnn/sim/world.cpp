@@ -1,6 +1,7 @@
-#include "world.hpp"
-#include "line.hpp"
-#include "maths.hpp"
+#include <carnn/sim/world.hpp>
+
+#include <carnn/util/line.hpp>
+#include <carnn/util/maths.hpp>
 
 World::World(const b2Vec2 gravity) : _gravity{gravity}, _world{gravity} {}
 

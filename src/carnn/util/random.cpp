@@ -1,9 +1,9 @@
-#include "randomutil.hpp"
+#include <carnn/util/random.hpp>
 
 #include <random>
 
 std::random_device device;
-std::mt19937_64 mersenne(device());
+std::mt19937_64    mersenne(device());
 
 double random_double(double min, double max)
 {
@@ -11,10 +11,7 @@ double random_double(double min, double max)
 	return distrib(mersenne);
 }
 
-double random_double()
-{
-	return random_double(0.0, 1.0);
-}
+double random_double() { return random_double(0.0, 1.0); }
 
 double random_gauss_double(double mean, double stddev)
 {

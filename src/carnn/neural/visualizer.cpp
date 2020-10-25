@@ -1,7 +1,7 @@
-#include "visualizer.hpp"
+#include <carnn/neural/visualizer.hpp>
 
-#include "../maths.hpp"
-#include "network.hpp"
+#include <carnn/neural/network.hpp>
+#include <carnn/util/maths.hpp>
 #include <fmt/core.h>
 #include <random>
 

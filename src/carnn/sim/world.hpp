@@ -5,9 +5,7 @@
 #include <box2d/box2d.h>
 #include <vector>
 
-#include "body.hpp"
-
-class Body;
+#include <carnn/sim/entities/body.hpp>
 
 class World
 {

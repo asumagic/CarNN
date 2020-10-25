@@ -1,7 +1,6 @@
-#include "body.hpp"
+#include <carnn/sim/entities/body.hpp>
 
-#include "world.hpp"
-#include <iostream>
+#include <carnn/sim/world.hpp>
 
 Body::Body(World& world, const b2BodyDef bdef, const bool do_render) :
 	_do_render(do_render), _next_color{210, 120, 0}, _bdef(bdef), _world(world)

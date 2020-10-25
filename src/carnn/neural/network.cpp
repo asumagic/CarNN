@@ -1,7 +1,7 @@
-#include "network.hpp"
+#include <carnn/neural/network.hpp>
 
-#include "../maths.hpp"
-#include "../randomutil.hpp"
+#include <carnn/util/maths.hpp>
+#include <carnn/util/random.hpp>
 #include <fmt/core.h>
 
 Network::Network(std::size_t input_count, std::size_t output_count) :
