@@ -2,4 +2,4 @@
 
 #include <cstdint>
 
-using NeuronId = std::uint32_t;
+using NeuronId = std::uint16_t;

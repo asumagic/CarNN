@@ -116,7 +116,7 @@ void Network::update()
 
 	for (Neuron& neuron : outputs())
 	{
-		neuron.value = clamp(neuron.value, 0.0, 1.0);
+		neuron.value = clamp(neuron.value, NeuralFp(0.0), NeuralFp(1.0));
 	}
 }
 

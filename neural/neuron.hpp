@@ -1,18 +1,19 @@
 #pragma once
 
 #include "activationmethod.hpp"
+#include "types.hpp"
 #include <cereal/cereal.hpp>
 
 class Network;
 
 struct Neuron
 {
-	double           bias              = 0.0;
+	NeuralFp         bias              = 0.0;
 	std::uint32_t    evolution_id      = 0;
 	ActivationMethod activation_method = ActivationMethod::Sigmoid;
 
-	double partial_activation = 0.0;
-	double value              = 0.0;
+	NeuralFp partial_activation = 0.0;
+	NeuralFp value              = 0.0;
 
 	Neuron() {}
 	Neuron(std::uint32_t evolution_id) : evolution_id(evolution_id) {}

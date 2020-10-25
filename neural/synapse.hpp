@@ -1,11 +1,12 @@
 #pragma once
 
 #include "neuronid.hpp"
+#include "types.hpp"
 #include <cereal/cereal.hpp>
 
 struct SynapseProperties
 {
-	double weight;
+	NeuralFp weight;
 
 	template<class Archive>
 	void serialize(Archive& ar)
