@@ -65,7 +65,7 @@ class Network
 	template<class Archive>
 	void serialize(Archive& ar)
 	{
-		ar(CEREAL_NVP(neurons));
+		ar(CEREAL_NVP(neurons), CEREAL_NVP(synapses));
 	}
 
 	private:
