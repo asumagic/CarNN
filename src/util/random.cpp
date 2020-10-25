@@ -2,8 +2,10 @@
 
 #include <random>
 
-std::random_device device;
-std::mt19937_64    mersenne(device());
+namespace util
+{
+static std::random_device device;
+static std::mt19937_64    mersenne(device());
 
 double random_double(double min, double max)
 {
@@ -30,3 +32,4 @@ bool random_bool(const double probability)
 	std::bernoulli_distribution distrib(probability);
 	return distrib(mersenne);
 }
+} // namespace util

@@ -2,13 +2,8 @@
 
 #include <carnn/sim/entities/body.hpp>
 
-enum class Direction
+namespace sim::entities
 {
-	Left,
-	Right,
-	None
-};
-
 class Wheel : public Body
 {
 	public:
@@ -22,3 +17,4 @@ class Wheel : public Body
 	static constexpr float _drag = -10.0f, _brake_drag = -60.0f, _impulse_magnitude = .1f, _forward_mul = 0.15f,
 						   _backwards_mul = 0.05f, _max_accel_force = 600.f, _max_lateral_impulse = 15.f;
 };
+} // namespace sim::entities

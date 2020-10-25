@@ -2,8 +2,8 @@
 
 #include <carnn/sim/entities/body.hpp>
 
-class Car;
-
+namespace sim::entities
+{
 class Checkpoint : public Body
 {
 	public:
@@ -14,3 +14,4 @@ class Checkpoint : public Body
 	sf::Vector2f origin;
 	sf::Vector2f p1, p2;
 };
+} // namespace sim::entities

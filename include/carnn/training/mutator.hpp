@@ -1,17 +1,14 @@
 #pragma once
 
 #include <carnn/neural/activationmethod.hpp>
+#include <carnn/neural/fwd.hpp>
+#include <carnn/sim/fwd.hpp>
 #include <cereal/cereal.hpp>
 #include <cstdint>
 #include <vector>
 
-class Network;
-class Car;
-struct Neuron;
-struct Synapse;
-class Simulation;
-struct Individual;
-
+namespace training
+{
 struct MutatorSettings
 {
 	using Fp = float;
@@ -88,22 +85,23 @@ class Mutator
 	//       space
 	std::uint32_t current_evolution_id = 10000;
 
-	Network cross(Network a, const Network& b);
+	neural::Network cross(neural::Network a, const neural::Network& b);
 
-	void darwin(Simulation& sim, std::vector<Individual>& results);
+	void darwin(sim::Simulation& sim, std::vector<sim::Individual>& results);
 
-	void create_random_neuron(Network& network);
-	void create_random_synapse(Network& network);
+	void create_random_neuron(neural::Network& network);
+	void create_random_synapse(neural::Network& network);
 
-	void mutate(Network& network);
+	void mutate(neural::Network& network);
 
-	void randomize(Network& network);
-	void randomize(Neuron& neuron);
-	void randomize(Synapse& synapse);
+	void randomize(neural::Network& network);
+	void randomize(neural::Neuron& neuron);
+	void randomize(neural::Synapse& synapse);
 
-	ActivationMethod random_activation_method();
+	neural::ActivationMethod random_activation_method();
 
 	std::uint32_t get_unique_evolution_id();
 
-	double get_divergence_factor(const Network& a, const Network& b);
+	double get_divergence_factor(const neural::Network& a, const neural::Network& b);
 };
+} // namespace training

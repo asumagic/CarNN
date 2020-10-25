@@ -1,5 +1,4 @@
-#ifndef WORLD_HPP
-#define WORLD_HPP
+#pragma once
 
 #include <SFML/Graphics.hpp>
 #include <box2d/box2d.h>
@@ -7,6 +6,8 @@
 
 #include <carnn/sim/entities/body.hpp>
 
+namespace sim
+{
 class World
 {
 	public:
@@ -20,7 +21,7 @@ class World
 
 	void update_view(sf::RenderTarget& target, sf::Vector2f origin, float czoom);
 
-	template<typename T = Body>
+	template<typename T = entities::Body>
 	T& add_body(const b2BodyDef bdef)
 	{
 		// Emplace a body and return
@@ -33,10 +34,9 @@ class World
 	std::size_t body_count() const { return _bodies.size(); }
 
 	private:
-	std::vector<std::unique_ptr<Body>> _bodies;
+	std::vector<std::unique_ptr<entities::Body>> _bodies;
 
 	b2Vec2  _gravity;
 	b2World _world;
 };
-
-#endif // WORLD_HPP
+} // namespace sim

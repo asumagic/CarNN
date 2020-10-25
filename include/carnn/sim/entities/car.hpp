@@ -1,17 +1,14 @@
 #pragma once
 
+#include <carnn/neural/fwd.hpp>
 #include <carnn/sim/entities/body.hpp>
+#include <carnn/sim/fwd.hpp>
 #include <vector>
 
 constexpr size_t total_rays = 12;
 
-class Checkpoint;
-class Network;
-class Wheel;
-class World;
-class SimulationUnit;
-struct Individual;
-
+namespace sim::entities
+{
 enum AxonControl : size_t
 {
 	Axon_Forward,
@@ -59,7 +56,7 @@ class Car : public Body
 
 	void compute_raycasts();
 
-	void update_inputs(Network& n);
+	void update_inputs(neural::Network& n);
 
 	bool dead = false;
 
@@ -91,3 +88,4 @@ class Car : public Body
 
 	const float _angle_lock = 0.8f, _turn_speed = 1.0f;
 };
+} // namespace sim::entities

@@ -1,5 +1,7 @@
 #include <carnn/neural/activationmethod.hpp>
 
+namespace neural
+{
 std::string_view name(ActivationMethod method)
 {
 	switch (method)
@@ -11,3 +13,4 @@ std::string_view name(ActivationMethod method)
 	default: return "<invalid>";
 	}
 }
+} // namespace neural

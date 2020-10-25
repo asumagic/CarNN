@@ -6,6 +6,8 @@
 #include <carnn/sim/world.hpp>
 #include <carnn/util/maths.hpp>
 
+namespace sim::entities
+{
 void CarCheckpointListener::BeginContact(b2Contact* contact)
 {
 	b2Fixture *   fixA = contact->GetFixtureA(), *fixB = contact->GetFixtureB();
@@ -115,7 +117,7 @@ void Car::update()
 
 	for (Wheel* wheel : _wheels)
 	{
-		wheel->cancel_lateral_force(lerp(1.f, 0.1f, _drift_amount));
+		wheel->cancel_lateral_force(util::lerp(1.f, 0.1f, _drift_amount));
 		wheel->drag(_brake_amount);
 		wheel->update();
 	}
@@ -188,15 +190,15 @@ float Car::fitness() const
 	// this is extremely stupid but hey
 
 	const float body_distance = std::min(
-		{distance(body_origin, _target_checkpoint->origin),
-		 distance(body_origin, _target_checkpoint->p1),
-		 distance(body_origin, _target_checkpoint->p2)});
+		{util::distance(body_origin, _target_checkpoint->origin),
+		 util::distance(body_origin, _target_checkpoint->p1),
+		 util::distance(body_origin, _target_checkpoint->p2)});
 
 	const float checkpoint_distance = std::max(
-		{distance(_target_checkpoint->p1, _latest_checkpoint->p1),
-		 distance(_target_checkpoint->p1, _latest_checkpoint->p2),
-		 distance(_target_checkpoint->p2, _latest_checkpoint->p1),
-		 distance(_target_checkpoint->p2, _latest_checkpoint->p2)});
+		{util::distance(_target_checkpoint->p1, _latest_checkpoint->p1),
+		 util::distance(_target_checkpoint->p1, _latest_checkpoint->p2),
+		 util::distance(_target_checkpoint->p2, _latest_checkpoint->p1),
+		 util::distance(_target_checkpoint->p2, _latest_checkpoint->p2)});
 
 	const float normalized_distance = 1.0f - std::clamp(body_distance / checkpoint_distance, 0.0f, 1.0f);
 
@@ -228,7 +230,7 @@ void Car::steer(float towards)
 {
 	for (size_t i = 0; i < 2; ++i)
 	{
-		float desired_angle = lerp(-_angle_lock, _angle_lock, towards * 0.5 + 0.5);
+		float desired_angle = util::lerp(-_angle_lock, _angle_lock, towards * 0.5 + 0.5);
 
 		float fspeed      = _turn_speed / 30.0f;
 		float cangle      = _front_joints[i]->GetJointAngle();
@@ -293,10 +295,10 @@ void Car::compute_raycasts()
 		// closest_frac = clamp(random_gauss_double(closest_frac, 0.01), 0.0001, 0.999);
 
 		const sf::Color col{
-			static_cast<uint8_t>(lerp(200, 0, raycast.closest_fraction)),
-			static_cast<uint8_t>(lerp(0, 200, raycast.closest_fraction)),
+			static_cast<uint8_t>(util::lerp(200, 0, raycast.closest_fraction)),
+			static_cast<uint8_t>(util::lerp(0, 200, raycast.closest_fraction)),
 			0,
-			static_cast<uint8_t>(lerp(150, 0, raycast.closest_fraction))};
+			static_cast<uint8_t>(util::lerp(150, 0, raycast.closest_fraction))};
 
 		sf::Vertex v1{sf::Vector2f{p1.x, p1.y}};
 		v1.color     = col;
@@ -311,7 +313,7 @@ void Car::compute_raycasts()
 	}
 }
 
-void Car::update_inputs(Network& n)
+void Car::update_inputs(neural::Network& n)
 {
 	auto inputs = n.inputs();
 
@@ -324,11 +326,12 @@ void Car::update_inputs(Network& n)
 	// inputs.neurons[i++].value = _net_feedback;
 	inputs[i++].partial_activation = objective_dir.x;
 	inputs[i++].partial_activation = objective_dir.y;
-	inputs[i++].partial_activation = lerp(0.0, 1.0, forward_velocity().Length() / 6.0f);
-	inputs[i++].partial_activation = lerp(0.0, 1.0, lateral_velocity().Length() / 1.0f);
+	inputs[i++].partial_activation = util::lerp(0.0, 1.0, forward_velocity().Length() / 6.0f);
+	inputs[i++].partial_activation = util::lerp(0.0, 1.0, lateral_velocity().Length() / 1.0f);
 
 	for (std::size_t j = 0; j < _ray_distances.size(); ++j, ++i)
 	{
 		inputs[i].partial_activation = _ray_distances[j];
 	}
 }
+} // namespace sim::entities

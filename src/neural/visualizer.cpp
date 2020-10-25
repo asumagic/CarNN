@@ -5,6 +5,8 @@
 #include <fmt/core.h>
 #include <random>
 
+namespace neural
+{
 constexpr float layer_padding       = 256.0f;
 constexpr float neuron_area         = 700.0f;
 constexpr float hidden_layer_jitter = 160.0f;
@@ -26,10 +28,10 @@ void Visualizer::display(sf::RenderTarget& target, sf::Font& font)
 		sf::Vector2f source_origin = global_origin + neuron_offset(_network->neuron_position(synapse.source));
 		sf::Vector2f target_origin = global_origin + neuron_offset(_network->neuron_position(synapse.target));
 
-		std::uint8_t alpha = lerp(255u, 64u, std::abs(synapse.properties.weight) * 4.0);
+		std::uint8_t alpha = util::lerp(255u, 64u, std::abs(synapse.properties.weight) * 4.0);
 
-		sf::Color origin_color = lerp_rgb(inactive_color, active_color, neuron.value);
-		sf::Color target_color = lerp_rgb(inactive_color, active_color, synapse.properties.weight);
+		sf::Color origin_color = util::lerp_rgb(inactive_color, active_color, neuron.value);
+		sf::Color target_color = util::lerp_rgb(inactive_color, active_color, synapse.properties.weight);
 		origin_color.a = target_color.a = alpha;
 
 		std::array<sf::Vertex, 2> vertices{
@@ -50,7 +52,7 @@ void Visualizer::display(sf::RenderTarget& target, sf::Font& font)
 			sf::CircleShape shape(neuron_radius, 16);
 
 			shape.setPosition(origin - sf::Vector2f(neuron_radius, neuron_radius));
-			shape.setFillColor(lerp_rgb(inactive_color, active_color, neuron.value));
+			shape.setFillColor(util::lerp_rgb(inactive_color, active_color, neuron.value));
 
 			target.draw(shape);
 
@@ -80,3 +82,4 @@ sf::Vector2f Visualizer::neuron_offset(NeuronPosition pos)
 		std::round(float(pos.layer) * layer_padding + jitter),
 		std::round(float(pos.neuron_in_layer) / float(_network->layers()[pos.layer].size()) * neuron_area)};
 }
+} // namespace neural

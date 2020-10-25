@@ -1,11 +1,12 @@
 #pragma once
 
 #include <carnn/neural/activationmethod.hpp>
+#include <carnn/neural/fwd.hpp>
 #include <carnn/neural/types.hpp>
 #include <cereal/cereal.hpp>
 
-class Network;
-
+namespace neural
+{
 struct Neuron
 {
 	NeuralFp         bias              = 0.0;
@@ -37,3 +38,4 @@ struct Neuron
 		return neuron.evolution_id == evolution_id;
 	}
 };
+} // namespace neural

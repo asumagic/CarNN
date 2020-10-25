@@ -4,6 +4,8 @@
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
 
+namespace util
+{
 template<class T>
 T clamp(T x, T lower, T upper)
 {
@@ -34,3 +36,4 @@ T pow2(T x)
 }
 
 inline float distance(sf::Vector2f a, sf::Vector2f b) { return std::sqrt(pow2(a.x - b.x) + pow2(a.y - b.y)); }
+} // namespace util

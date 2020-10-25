@@ -1,18 +1,21 @@
 #pragma once
 
 #include <carnn/sim/entities/car.hpp>
-#include <carnn/sim/entities/checkpoint.hpp>
+#include <carnn/sim/fwd.hpp>
 #include <carnn/sim/world.hpp>
+#include <vector>
 
+namespace sim
+{
 class SimulationUnit
 {
 	public:
 	World world;
 
-	std::vector<Car*>        cars;
-	std::vector<Checkpoint*> checkpoints;
-	Body*                    wall;
-	CarCheckpointListener    contact_listener;
+	std::vector<entities::Car*>        cars;
+	std::vector<entities::Checkpoint*> checkpoints;
+	entities::Body*                    wall;
+	entities::CarCheckpointListener    contact_listener;
 
 	std::size_t ticks_elapsed   = 0;
 	float       seconds_elapsed = 0.0f;
@@ -36,5 +39,6 @@ class Simulation
 
 	sf::VertexArray checkpoint_vertices;
 
-	std::vector<Car*> cars;
+	std::vector<entities::Car*> cars;
 };
+} // namespace sim

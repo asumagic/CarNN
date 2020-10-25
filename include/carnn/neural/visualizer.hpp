@@ -1,10 +1,10 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
-#include <carnn/neural/network.hpp>
+#include <carnn/neural/fwd.hpp>
 
-class Network;
-
+namespace neural
+{
 class Visualizer
 {
 	public:
@@ -17,3 +17,4 @@ class Visualizer
 
 	const Network* _network;
 };
+} // namespace neural

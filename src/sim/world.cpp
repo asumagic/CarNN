@@ -3,6 +3,8 @@
 #include <carnn/util/line.hpp>
 #include <carnn/util/maths.hpp>
 
+namespace sim
+{
 World::World(const b2Vec2 gravity) : _gravity{gravity}, _world{gravity} {}
 
 World& World::step(const float speed, const int vel_it, const int pos_it)
@@ -32,8 +34,10 @@ World& World::render(sf::RenderTarget& target)
 void World::update_view(sf::RenderTarget& target, sf::Vector2f origin, float czoom)
 {
 	sf::View new_view{
-		lerp(target.getView().getCenter(), origin, 0.2f * 1.0f / 30.0f * 60.f), sf::Vector2f{target.getSize()} * czoom};
+		util::lerp(target.getView().getCenter(), origin, 0.2f * 1.0f / 30.0f * 60.f),
+		sf::Vector2f{target.getSize()} * czoom};
 	target.setView(new_view);
 }
 
 b2World& World::get() { return _world; }
+} // namespace sim

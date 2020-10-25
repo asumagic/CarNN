@@ -2,11 +2,11 @@
 
 #include <SFML/Graphics.hpp>
 #include <box2d/box2d.h>
+#include <carnn/sim/fwd.hpp>
 #include <vector>
 
-class World;
-class Body;
-
+namespace sim::entities
+{
 enum class BodyType
 {
 	BodyAny = 0,
@@ -64,3 +64,4 @@ class Body
 	b2Body*   _body;
 	World&    _world;
 };
+} // namespace sim::entities

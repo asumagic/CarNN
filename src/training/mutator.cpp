@@ -9,6 +9,10 @@
 #include <fstream>
 #include <spdlog/spdlog.h>
 
+using namespace neural;
+
+namespace training
+{
 Network Mutator::cross(Network a, const Network& b)
 {
 	// replace random synapses from a with ones from b
@@ -32,7 +36,7 @@ Network Mutator::cross(Network a, const Network& b)
 		}
 	}
 
-	if (random_bool(settings.hybridization_chance)
+	if (util::random_bool(settings.hybridization_chance)
 		&& get_divergence_factor(a, b) <= settings.max_hybridization_divergence_factor)
 	{
 		std::vector<NeuronId> b_imported_neurons;
@@ -69,9 +73,9 @@ Network Mutator::cross(Network a, const Network& b)
 	return a;
 }
 
-void Mutator::darwin(Simulation& sim, std::vector<Individual>& individuals)
+void Mutator::darwin(sim::Simulation& sim, std::vector<sim::Individual>& individuals)
 {
-	std::sort(individuals.begin(), individuals.end(), [&](const Individual& a, const Individual& b) {
+	std::sort(individuals.begin(), individuals.end(), [&](const sim::Individual& a, const sim::Individual& b) {
 		return sim.cars[a.car_id]->fitness() > sim.cars[b.car_id]->fitness();
 	});
 
@@ -112,8 +116,8 @@ void Mutator::darwin(Simulation& sim, std::vector<Individual>& individuals)
 		{
 			// TODO: this allows self breeding, do we allow it?
 			individual.network = cross(
-				individuals[random_int(0, settings.round_survivors - 1)].network,
-				individuals[random_int(0, settings.round_survivors - 1)].network);
+				individuals[util::random_int(0, settings.round_survivors - 1)].network,
+				individuals[util::random_int(0, settings.round_survivors - 1)].network);
 
 			mutate(individual.network);
 		}
@@ -132,7 +136,7 @@ void Mutator::create_random_neuron(Network& network)
 	// other neuron, even itself (but does now allow creating duplicate synapses).
 
 	const std::size_t extra_synapse_count
-		= random_int(0, settings.max_extra_synapses); // TODO: gaussian distrib or something
+		= util::random_int(0, settings.max_extra_synapses); // TODO: gaussian distrib or something
 
 	for (std::size_t i = 0; i < extra_synapse_count; ++i)
 	{
@@ -143,7 +147,7 @@ void Mutator::create_random_neuron(Network& network)
 		switch (pos.layer)
 		{
 		case 0: is_target = false; break;
-		case 1: is_target = random_bool(); break;
+		case 1: is_target = util::random_bool(); break;
 		case 2: is_target = true; break;
 		}
 
@@ -175,14 +179,14 @@ void Mutator::create_random_neuron(Network& network)
 	// HACK: this should not assume the neuron ids of each layer
 	if (target_by_synapses == 0)
 	{
-		randomize(network.create_synapse(random_int(0, network.inputs().size() - 1), created_neuron_id));
+		randomize(network.create_synapse(util::random_int(0, network.inputs().size() - 1), created_neuron_id));
 	}
 
 	if (source_of_synapses == 0)
 	{
 		randomize(network.create_synapse(
 			created_neuron_id,
-			random_int(network.inputs().size(), network.inputs().size() + network.outputs().size() - 1)));
+			util::random_int(network.inputs().size(), network.inputs().size() + network.outputs().size() - 1)));
 	}
 }
 
@@ -190,38 +194,39 @@ void Mutator::create_random_synapse([[maybe_unused]] Network& network) {}
 
 void Mutator::mutate(Network& network)
 {
-	while (random_bool(settings.bias_mutation_chance))
+	while (util::random_bool(settings.bias_mutation_chance))
 	{
 		auto& neuron = network.neurons[network.random_neuron()];
-		neuron.bias  = random_gauss_double(neuron.bias, settings.bias_mutation_factor);
+		neuron.bias  = util::random_gauss_double(neuron.bias, settings.bias_mutation_factor);
 	}
 
-	while (random_bool(settings.bias_hard_mutation_chance))
+	while (util::random_bool(settings.bias_hard_mutation_chance))
 	{
 		auto& neuron = network.neurons[network.random_neuron()];
-		neuron.bias  = random_gauss_double(neuron.bias, settings.bias_hard_mutation_factor);
+		neuron.bias  = util::random_gauss_double(neuron.bias, settings.bias_hard_mutation_factor);
 	}
 
-	while (random_bool(settings.weight_mutation_chance))
-	{
-		auto& synapse             = network.synapses[network.random_synapse()];
-		synapse.properties.weight = random_gauss_double(synapse.properties.weight, settings.weight_mutation_factor);
-	}
-
-	while (random_bool(settings.weight_hard_mutation_chance))
+	while (util::random_bool(settings.weight_mutation_chance))
 	{
 		auto& synapse = network.synapses[network.random_synapse()];
 		synapse.properties.weight
-			= random_gauss_double(synapse.properties.weight, settings.weight_hard_mutation_factor);
+			= util::random_gauss_double(synapse.properties.weight, settings.weight_mutation_factor);
 	}
 
-	while (random_bool(settings.activation_mutation_chance))
+	while (util::random_bool(settings.weight_hard_mutation_chance))
+	{
+		auto& synapse = network.synapses[network.random_synapse()];
+		synapse.properties.weight
+			= util::random_gauss_double(synapse.properties.weight, settings.weight_hard_mutation_factor);
+	}
+
+	while (util::random_bool(settings.activation_mutation_chance))
 	{
 		auto& neuron             = network.neurons[network.random_neuron()];
 		neuron.activation_method = random_activation_method();
 	}
 
-	while (random_bool(settings.neuron_creation_chance))
+	while (util::random_bool(settings.neuron_creation_chance))
 	{
 		create_random_neuron(network);
 	}
@@ -242,18 +247,18 @@ void Mutator::randomize(Network& network)
 
 void Mutator::randomize(Neuron& neuron)
 {
-	neuron.bias              = random_gauss_double(0.0, settings.bias_initial_std_dev);
+	neuron.bias              = util::random_gauss_double(0.0, settings.bias_initial_std_dev);
 	neuron.activation_method = ActivationMethod::LeakyRelu;
 }
 
 void Mutator::randomize(Synapse& synapse)
 {
-	synapse.properties.weight = random_gauss_double(0.0, settings.weight_initial_std_dev);
+	synapse.properties.weight = util::random_gauss_double(0.0, settings.weight_initial_std_dev);
 }
 
 ActivationMethod Mutator::random_activation_method()
 {
-	const double x = random_double();
+	const double x = util::random_double();
 
 	if (x < 0.6)
 	{
@@ -315,3 +320,4 @@ bool MutatorSettings::save()
 }
 
 void MutatorSettings::load_defaults() { *this = {}; }
+} // namespace training

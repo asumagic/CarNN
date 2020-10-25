@@ -3,6 +3,8 @@
 #include <carnn/sim/world.hpp>
 #include <carnn/util/maths.hpp>
 
+namespace sim::entities
+{
 Wheel::Wheel(World& world, const b2BodyDef bdef, const bool do_render) : Body(world, bdef, do_render)
 {
 	set_type(BodyType::BodyWheel);
@@ -23,7 +25,7 @@ void Wheel::drag(float brake_intensity)
 {
 	b2Vec2 fvel   = forward_velocity();
 	float  fspeed = fvel.Normalize();
-	float  drag   = lerp(_drag, _brake_drag, brake_intensity) * fspeed;
+	float  drag   = util::lerp(_drag, _brake_drag, brake_intensity) * fspeed;
 	_body->ApplyForce(drag * fvel, _body->GetWorldCenter(), false);
 }
 
@@ -41,3 +43,4 @@ void Wheel::accelerate(float throttle)
 
 	_body->ApplyForce(final_force * current_fnormal, _body->GetWorldCenter(), true);
 }
+} // namespace sim::entities

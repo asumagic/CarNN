@@ -2,6 +2,8 @@
 
 #include <string_view>
 
+namespace neural
+{
 enum class ActivationMethod : std::uint8_t
 {
 	Sigmoid,
@@ -12,3 +14,4 @@ enum class ActivationMethod : std::uint8_t
 };
 
 std::string_view name(ActivationMethod method);
+} // namespace neural

@@ -4,6 +4,8 @@
 #include <carnn/util/random.hpp>
 #include <fmt/core.h>
 
+namespace neural
+{
 Network::Network(std::size_t input_count, std::size_t output_count) :
 	neurons(input_count + output_count), _input_count(input_count), _output_count(output_count)
 {
@@ -116,7 +118,7 @@ void Network::update()
 
 	for (Neuron& neuron : outputs())
 	{
-		neuron.value = clamp(neuron.value, NeuralFp(0.0), NeuralFp(1.0));
+		neuron.value = util::clamp(neuron.value, NeuralFp(0.0), NeuralFp(1.0));
 	}
 }
 
@@ -129,6 +131,7 @@ void Network::reset_values()
 	}
 }
 
-NeuronId Network::random_neuron() { return NeuronId(random_int(0, neurons.size() - 1)); }
+NeuronId Network::random_neuron() { return NeuronId(util::random_int(0, neurons.size() - 1)); }
 
-SynapseId Network::random_synapse() { return random_int(0, synapses.size() - 1); }
+SynapseId Network::random_synapse() { return util::random_int(0, synapses.size() - 1); }
+} // namespace neural

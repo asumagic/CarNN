@@ -31,6 +31,11 @@ enum class SimulationState
 	Paused
 };
 
+using namespace neural;
+using namespace sim;
+using namespace sim::entities;
+using namespace training;
+
 class App
 {
 	public:

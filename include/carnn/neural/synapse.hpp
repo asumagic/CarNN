@@ -4,6 +4,8 @@
 #include <carnn/neural/types.hpp>
 #include <cereal/cereal.hpp>
 
+namespace neural
+{
 struct SynapseProperties
 {
 	NeuralFp weight;
@@ -26,3 +28,4 @@ struct Synapse
 		ar(CEREAL_NVP(source), CEREAL_NVP(target), CEREAL_NVP(properties));
 	}
 };
+} // namespace neural

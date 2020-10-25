@@ -1,6 +1,7 @@
 #include <carnn/sim/simulationunit.hpp>
 
 #include <carnn/sim/entities/car.hpp>
+#include <carnn/sim/entities/checkpoint.hpp>
 #include <carnn/sim/world.hpp>
 #include <carnn/util/line.hpp>
 #include <fstream>
@@ -9,6 +10,8 @@
 #include <spdlog/spdlog.h>
 #include <thread>
 
+namespace sim
+{
 Simulation::Simulation() : units(std::thread::hardware_concurrency())
 {
 	spdlog::info("reinitializing simulation");
@@ -32,11 +35,11 @@ void Simulation::load_map(const char* fname)
 		b2BodyDef bdef;
 		bdef.type = b2_staticBody;
 		unit.wall = &unit.world.add_body(bdef);
-		unit.wall->set_type(BodyType::BodyWall);
+		unit.wall->set_type(sim::entities::BodyType::BodyWall);
 	}
 
-	std::vector<Line> eliminated;
-	sf::Vector2u      image_size = map.getSize();
+	std::vector<util::Line> eliminated;
+	sf::Vector2u            image_size = map.getSize();
 	for (unsigned y = 1; y < image_size.y - 1; ++y)
 	{
 		for (unsigned x = 1; x < image_size.x - 1; ++x)
@@ -52,7 +55,7 @@ void Simulation::load_map(const char* fname)
 							continue;
 						}
 
-						Line ln{{x * World::scale, y * World::scale}, {xn * World::scale, yn * World::scale}};
+						util::Line ln{{x * World::scale, y * World::scale}, {xn * World::scale, yn * World::scale}};
 
 						const sf::Color pixel = map.getPixel(xn, yn);
 						if (pixel == sf::Color::White)
@@ -134,11 +137,11 @@ void Simulation::load_checkpoints(const char* fname)
 
 			for (SimulationUnit& unit : units)
 			{
-				Checkpoint& cpb = unit.world.add_body<Checkpoint>(cp_bdef);
-				cpb.origin      = center;
-				cpb.p1          = p1;
-				cpb.p2          = p2;
-				cpb.id          = i++;
+				auto& cpb  = unit.world.add_body<entities::Checkpoint>(cp_bdef);
+				cpb.origin = center;
+				cpb.p1     = p1;
+				cpb.p2     = p2;
+				cpb.id     = i++;
 				cpb.add_fixture(cp_fdef);
 
 				unit.checkpoints.push_back(&cpb);
@@ -183,7 +186,7 @@ void Simulation::init_cars()
 	for (std::size_t i = 0; i < 24 * 15; ++i)
 	{
 		SimulationUnit& unit = optimal_unit();
-		Car&            car  = unit.world.add_body<Car>(bdef);
+		auto&           car  = unit.world.add_body<entities::Car>(bdef);
 		car.unit             = &unit;
 		cars.push_back(&car);
 		unit.cars.push_back(&car);
@@ -201,3 +204,4 @@ SimulationUnit& Simulation::optimal_unit()
 
 	return *it;
 }
+} // namespace sim

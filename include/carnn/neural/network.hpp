@@ -1,5 +1,6 @@
 #pragma once
 
+#include <carnn/neural/fwd.hpp>
 #include <carnn/neural/neuron.hpp>
 #include <carnn/neural/synapse.hpp>
 #include <carnn/neural/synapseid.hpp>
@@ -7,9 +8,8 @@
 #include <gsl/span>
 #include <vector>
 
-struct Neuron;
-class Network;
-
+namespace neural
+{
 struct NeuronPosition
 {
 	std::size_t layer, neuron_in_layer;
@@ -63,3 +63,4 @@ class Network
 	private:
 	std::size_t _input_count, _output_count;
 };
+} // namespace neural

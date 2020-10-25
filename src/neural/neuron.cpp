@@ -3,6 +3,8 @@
 #include <carnn/training/mutator.hpp>
 #include <carnn/util/maths.hpp>
 
+namespace neural
+{
 void Neuron::compute_value()
 {
 	const auto v = partial_activation + bias;
@@ -15,3 +17,4 @@ void Neuron::compute_value()
 	default: break;
 	}
 }
+} // namespace neural
