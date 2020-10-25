@@ -17,22 +17,22 @@ find_package(TBB CONFIG REQUIRED)
 find_package(Microsoft.GSL CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
-	src/carnn/neural/activationmethod.cpp
-	src/carnn/neural/network.cpp
-	src/carnn/neural/neuron.cpp
-	src/carnn/neural/visualizer.cpp
-	src/carnn/sim/entities/car.cpp
-	src/carnn/sim/entities/checkpoint.cpp
-	src/carnn/sim/entities/wheel.cpp
-	src/carnn/sim/entities/body.cpp
-	src/carnn/sim/simulationunit.cpp
-	src/carnn/sim/world.cpp
-	src/carnn/training/mutator.cpp
-	src/carnn/util/random.cpp
-	src/carnn/main.cpp
+	src/neural/activationmethod.cpp
+	src/neural/network.cpp
+	src/neural/neuron.cpp
+	src/neural/visualizer.cpp
+	src/sim/entities/car.cpp
+	src/sim/entities/checkpoint.cpp
+	src/sim/entities/wheel.cpp
+	src/sim/entities/body.cpp
+	src/sim/simulationunit.cpp
+	src/sim/world.cpp
+	src/training/mutator.cpp
+	src/util/random.cpp
+	src/main.cpp
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE src/)
+target_include_directories(${PROJECT_NAME} PRIVATE include/)
 
 target_link_libraries(${PROJECT_NAME}
 	jsoncpp_static
