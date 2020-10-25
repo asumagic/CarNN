@@ -28,6 +28,7 @@ add_executable(${PROJECT_NAME}
 	src/sim/simulationunit.cpp
 	src/sim/world.cpp
 	src/training/mutator.cpp
+	src/training/settings.cpp
 	src/util/random.cpp
 	src/main.cpp
 )

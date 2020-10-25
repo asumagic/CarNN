@@ -5,8 +5,6 @@
 #include <carnn/sim/individual.hpp>
 #include <carnn/sim/simulationunit.hpp>
 #include <carnn/util/random.hpp>
-#include <cereal/archives/json.hpp>
-#include <fstream>
 #include <spdlog/spdlog.h>
 
 using namespace neural;
@@ -289,35 +287,4 @@ double Mutator::get_divergence_factor(const Network& a, const Network& b)
 
 	return factor;
 }
-
-bool MutatorSettings::load_from_file()
-{
-	spdlog::info("reloading mutator settings from file");
-
-	try
-	{
-		std::ifstream            is("mutator.json", std::ios::binary);
-		cereal::JSONInputArchive ar(is);
-		serialize(ar);
-	}
-	catch (const cereal::Exception& e)
-	{
-		spdlog::error("exception occured while loading mutator settings: {}", e.what());
-		return false;
-	}
-
-	return true;
-}
-
-bool MutatorSettings::save()
-{
-	spdlog::info("saving mutator settings to file");
-
-	std::ofstream             os("mutator.json", std::ios::binary);
-	cereal::JSONOutputArchive ar(os);
-	serialize(ar);
-	return true;
-}
-
-void MutatorSettings::load_defaults() { *this = {}; }
 } // namespace training
