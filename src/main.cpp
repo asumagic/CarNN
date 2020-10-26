@@ -44,6 +44,12 @@ class App
 
 	void run();
 
+	template<class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(CEREAL_NVP(_population), CEREAL_NVP(_mutator));
+	}
+
 	private:
 	static sf::ContextSettings default_context_settings();
 
@@ -65,8 +71,7 @@ class App
 	SimulationState _simulation_state;
 
 	std::vector<Individual> _population;
-
-	Mutator _mutator;
+	Mutator                 _mutator;
 
 	GuiWindows _gui;
 
@@ -197,13 +202,13 @@ void App::frame()
 			{
 				std::ofstream               os("nets.bin", std::ios::binary);
 				cereal::BinaryOutputArchive archive(os);
-				archive(_population);
+				archive(*this);
 			}
 			else if (ev.key.code == sf::Keyboard::L)
 			{
 				std::ifstream              is("nets.bin", std::ios::binary);
 				cereal::BinaryInputArchive archive(is);
-				archive(_population);
+				archive(*this);
 
 				start_new_run();
 			}

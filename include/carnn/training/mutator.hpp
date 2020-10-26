@@ -42,5 +42,15 @@ class Mutator
 	std::uint32_t get_unique_evolution_id();
 
 	double get_divergence_factor(const neural::Network& a, const neural::Network& b);
+
+	template<class Archive>
+	void serialize(Archive& ar)
+	{
+		ar(CEREAL_NVP(settings),
+		   CEREAL_NVP(max_fitness),
+		   CEREAL_NVP(fitness_evolution_threshold),
+		   CEREAL_NVP(current_generation),
+		   CEREAL_NVP(current_evolution_id));
+	}
 };
 } // namespace training
