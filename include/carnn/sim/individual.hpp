@@ -12,12 +12,11 @@ struct Individual
 	neural::Network network;
 
 	bool   survivor_from_last = false;
-	double last_fitness       = 0.0;
 
 	template<class Archive>
 	void serialize(Archive& ar)
 	{
-		ar(car_id, network, survivor_from_last, last_fitness);
+		ar(car_id, network, survivor_from_last);
 	}
 };
 } // namespace sim

@@ -12,7 +12,7 @@
 
 namespace sim
 {
-Simulation::Simulation() : units(std::thread::hardware_concurrency())
+Simulation::Simulation() : units(24*32)
 {
 	spdlog::info("reinitializing simulation");
 	load_map("map.png");
@@ -183,7 +183,7 @@ void Simulation::init_cars()
 	fixdef.restitution       = 0.2f;
 	fixdef.filter.groupIndex = -1;
 
-	for (std::size_t i = 0; i < 24 * 15; ++i)
+	for (std::size_t i = 0; i < 4000; ++i)
 	{
 		SimulationUnit& unit = optimal_unit();
 		auto&           car  = unit.world.add_body<entities::Car>(bdef);

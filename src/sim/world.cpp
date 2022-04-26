@@ -17,7 +17,9 @@ World& World::update()
 {
 	// Update bodies
 	for (auto& b : _bodies)
+	{
 		b->update();
+	}
 
 	return *this;
 }
@@ -26,7 +28,9 @@ World& World::render(sf::RenderTarget& target)
 {
 	// Render bodies
 	for (auto& b : _bodies)
+	{
 		b->render(target);
+	}
 
 	return *this;
 }

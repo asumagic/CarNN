@@ -1,15 +1,17 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(CarNN)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto")
+set(CMAKE_CXX_FLAGS_DEBUG "-Og -g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto=thin -g")
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17")
+
+include(~/vcpkg/scripts/buildsystems/vcpkg.cmake)
 
 find_package(SFML 2 COMPONENTS graphics REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(ImGui-SFML CONFIG REQUIRED)
 find_package(jsoncpp CONFIG REQUIRED)
-find_package(unofficial-box2d CONFIG REQUIRED)
+find_package(box2d CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(cereal CONFIG REQUIRED)
@@ -41,10 +43,10 @@ target_link_libraries(${PROJECT_NAME}
 	imgui::imgui
 	ImGui-SFML::ImGui-SFML
 	GL # required because of sfml/vcpkg being dumbasses
-	unofficial::box2d::box2d
+	box2d::box2d
 	fmt
 	spdlog::spdlog
-	cereal
+	cereal::cereal
 	TBB::tbb
 	Microsoft.GSL::GSL
 )

@@ -4,6 +4,7 @@
 #include <carnn/neural/network.hpp>
 #include <carnn/neural/visualizer.hpp>
 #include <carnn/sim/entities/car.hpp>
+#include <carnn/sim/entities/wheel.hpp>
 #include <carnn/sim/entities/checkpoint.hpp>
 #include <carnn/sim/individual.hpp>
 #include <carnn/sim/simulationunit.hpp>
@@ -11,6 +12,7 @@
 #include <carnn/training/mutator.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/vector.hpp>
+#include <carnn/util/maths.hpp>
 #include <fmt/core.h>
 #include <fstream>
 #include <imgui-SFML.h>
@@ -68,7 +70,7 @@ class App
 	sf::RenderWindow _window;
 
 	Simulation      _sim;
-	SimulationState _simulation_state;
+	SimulationState _simulation_state = SimulationState::Realtime;
 
 	std::vector<Individual> _population;
 	Mutator                 _mutator;
@@ -129,23 +131,23 @@ void App::run()
 sf::ContextSettings App::default_context_settings()
 {
 	sf::ContextSettings ret;
-	ret.antialiasingLevel = 4;
+	ret.antialiasingLevel = 2;
 	return ret;
 }
 
 void App::advance_simulation(std::size_t ticks)
 {
 	tbb::parallel_for(tbb::blocked_range(_sim.units.begin(), _sim.units.end()), [&](const auto& range) {
-		for (std::size_t i = 0; i < ticks; ++i)
+		for (SimulationUnit& unit : range)
 		{
-			for (SimulationUnit& unit : range)
+			for (std::size_t i = 0; i < ticks; ++i)
 			{
 				tick(unit);
 
 				// HACK:
 				if (unit.seconds_elapsed > 60.0f * 5.0f)
 				{
-					return;
+					break;
 				}
 			}
 		}
@@ -227,29 +229,78 @@ void App::frame()
 	_window.clear(sf::Color{20, 20, 20});
 	_window.draw(_sim.checkpoint_vertices);
 	_window.draw(_sim.wall_vertices.data(), _sim.wall_vertices.size(), sf::Lines);
-	for (auto& unit : _sim.units)
+
+	std::vector<Individual*> rendered_individuals(_population.size());
+	for (std::size_t i = 0; i < _population.size(); ++i)
 	{
-		for (Individual& individual : _population)
+		Individual& individual = _population[i];
+		rendered_individuals[i] = &individual;
+
+		Car& c = *_sim.cars[individual.car_id];
+		if (!c.dead)
 		{
-			Car& c = *_sim.cars[individual.car_id];
+			rendered_individuals.push_back(&individual);
+		}
+	}
 
-			if (c.dead)
-			{
-				c.with_color(sf::Color{200, 0, 0, 60}, 255);
-			}
+	tbb::parallel_sort(
+		rendered_individuals.begin(),
+		rendered_individuals.end(),
+		[&](const Individual* a, const Individual* b) {
+			// TODO: pls make a method for this jesus
+			Car& ac = *_sim.cars[a->car_id];
+			Car& bc = *_sim.cars[b->car_id];
+			return (ac.fitness() > bc.fitness());
+		}
+	);
+	_tracked_individual = rendered_individuals[0];
 
-			if (individual.survivor_from_last)
-			{
-				c.with_color(sf::Color{200, 50, 0, 200}, 255);
-			}
-			else
-			{
-				c.with_color(sf::Color{0, 0, 100, 40}, 255);
-			}
+	std::size_t rendered = 0;
+	for (auto it = rendered_individuals.begin(); it != rendered_individuals.end(); ++it)
+	{
+		//if (*it != _tracked_individual) continue;
+
+		Car& c = *_sim.cars[(*it)->car_id];
+
+		if (c.dead)
+		{
+			c.with_color(sf::Color{200, 0, 0, 60}, 255);
 		}
 
-		unit.world.render(_window);
+		if ((*it)->survivor_from_last)
+		{
+			c.with_color(sf::Color{200, 50, 0, 200}, 255);
+		}
+		else
+		{
+			c.with_color(sf::Color{0, 0, 100, 40}, 255);
+		}
+
+		c.render(_window);
+
+		for (auto& wheel : c.get_wheels())
+		{
+			wheel->render(_window);
+		}
+
+		++rendered;
+
+		if (rendered >= 100)
+		{
+			break;
+		}
 	}
+
+	/*for (auto it = split_it; it != rendered_individuals.end(); ++it)
+	{
+		Car& c = *_sim.cars[(*it)->car_id];
+		c.fast_render(_window);
+	}*/
+
+	/*for (auto& unit : _sim.units)
+	{
+		unit.world.render(_window);
+	}*/
 
 	if (_tracked_individual != nullptr)
 	{
@@ -257,9 +308,10 @@ void App::frame()
 
 		const b2Vec2 b2target = car.get().GetPosition();
 		car.world().update_view(_window, sf::Vector2f{b2target.x, b2target.y}, _czoom);
-		/*sf::View view = win.getView();
-		view.rotate(top_car.get().GetAngle() * (360.0f / (2.0f * 3.14159265359f)));
-		win.setView(view);*/
+
+		/*sf::View view = _window.getView();
+		view.rotate(car.get().GetAngle() * (360.0f / (2.0f * 3.14159265359f)));
+		_window.setView(view);*/
 	}
 
 	sf::View world_view(_window.getView());
@@ -444,8 +496,6 @@ void App::tick(Individual& individual)
 		return;
 	}
 
-	c.set_target_checkpoint(c.unit->checkpoints.at(c.reached_checkpoints() % c.unit->checkpoints.size()));
-
 	c.compute_raycasts();
 
 	c.update_inputs(net);
@@ -498,6 +548,10 @@ void App::tick(Individual& individual)
 		c.steer(static_cast<float>(results[Axon_Steer_Right].value - results[Axon_Steer_Left].value));
 		c.accelerate(static_cast<float>(results[Axon_Forward].value - results[Axon_Backwards].value));
 		c.brake(results[Axon_Brake].value);
+		for (std::size_t i = 0; i < total_rays; ++i)
+		{
+			c._ray_angles[i] = util::lerp(float(c._ray_angles[i]), std::clamp(results[Axon_FirstRay + i].value, 0.0f, 1.0f), 0.1f);
+		}
 	}
 }
 
@@ -543,7 +597,7 @@ void App::reset_individuals()
 
 		individual.car_id = i;
 
-		individual.network = Network(total_rays + 4, 6);
+		individual.network = Network(total_rays + 4, total_rays + 6);
 		_mutator.randomize(individual.network);
 		/*
 				auto& inputs  = individual.network.inputs().neurons;

@@ -9,7 +9,7 @@ Body::Body(World& world, const b2BodyDef bdef, const bool do_render) :
 {
 	_body     = _world.get().CreateBody(&bdef);
 	_bud.body = this;
-	_body->SetUserData(&_bud);
+	_body->GetUserData().pointer = reinterpret_cast<std::uintptr_t>(&_bud);
 }
 
 void Body::update()

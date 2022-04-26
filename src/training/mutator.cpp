@@ -6,6 +6,7 @@
 #include <carnn/sim/simulationunit.hpp>
 #include <carnn/util/random.hpp>
 #include <spdlog/spdlog.h>
+#include <fstream>
 
 using namespace neural;
 
@@ -78,6 +79,9 @@ void Mutator::darwin(sim::Simulation& sim, std::vector<sim::Individual>& individ
 	});
 
 	float new_max_fitness = sim.cars.at(individuals[0].car_id)->fitness();
+
+	std::ofstream fitness_csv("fitness.csv", std::ios::app);
+	fitness_csv << time(nullptr) << ',' << new_max_fitness << '\n';
 
 	if (new_max_fitness >= max_fitness + fitness_evolution_threshold)
 	{

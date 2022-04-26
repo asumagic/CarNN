@@ -5,7 +5,7 @@
 #include <carnn/sim/fwd.hpp>
 #include <vector>
 
-constexpr size_t total_rays = 12;
+constexpr size_t total_rays = 3;
 
 namespace sim::entities
 {
@@ -17,7 +17,7 @@ enum AxonControl : size_t
 	Axon_Steer_Left,
 	Axon_Steer_Right,
 	Axon_Drift,
-	// Axon_Feedback
+	Axon_FirstRay
 };
 
 class CarCheckpointListener : public b2ContactListener
@@ -35,12 +35,15 @@ class Car : public Body
 
 	void update() override;
 	void render(sf::RenderTarget& target) override;
+	void fast_render(sf::RenderTarget& target);
 
 	void        contact_checkpoint(Checkpoint& cp);
 	void        set_target_checkpoint(Checkpoint* cp);
 	std::size_t reached_checkpoints() const;
 
 	b2Vec2 direction_to_objective() const;
+
+	const std::vector<Wheel*>& get_wheels() const { return _wheels; }
 
 	float fitness() const;
 	void  fitness_penalty(float value);
@@ -63,6 +66,9 @@ class Car : public Body
 	// TODO: make this less garbage
 	SimulationUnit* unit       = nullptr;
 	Individual*     individual = nullptr;
+
+	// yolo
+	std::array<double, total_rays> _ray_angles{};
 
 	private:
 	std::array<sf::Vertex, total_rays * 2> _rays{};

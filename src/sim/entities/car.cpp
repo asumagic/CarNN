@@ -3,16 +3,18 @@
 #include <carnn/neural/network.hpp>
 #include <carnn/sim/entities/checkpoint.hpp>
 #include <carnn/sim/entities/wheel.hpp>
+#include <carnn/sim/simulationunit.hpp>
 #include <carnn/sim/world.hpp>
 #include <carnn/util/maths.hpp>
+#include <carnn/util/random.hpp>
 
 namespace sim::entities
 {
 void CarCheckpointListener::BeginContact(b2Contact* contact)
 {
 	b2Fixture *   fixA = contact->GetFixtureA(), *fixB = contact->GetFixtureB();
-	BodyUserData &bodyA_BUD = *static_cast<BodyUserData*>(fixA->GetBody()->GetUserData()),
-				 &bodyB_BUD = *static_cast<BodyUserData*>(fixB->GetBody()->GetUserData());
+	auto &bodyA_BUD = reinterpret_cast<BodyUserData&>(fixA->GetBody()->GetUserData().pointer),
+	     &bodyB_BUD = reinterpret_cast<BodyUserData&>(fixB->GetBody()->GetUserData().pointer);
 
 	if (bodyA_BUD.type == BodyType::BodyCar && bodyB_BUD.type == BodyType::BodyCheckpoint)
 		static_cast<Car*>(bodyA_BUD.body)->contact_checkpoint(*static_cast<Checkpoint*>(bodyB_BUD.body));
@@ -94,6 +96,7 @@ void Car::reset()
 	_fitness              = 0.0f;
 	_acceleration_factor  = 1.0f;
 	_ray_update_frequency = 0;
+	_target_checkpoint    = unit->checkpoints[0];
 
 	for (Wheel* wheel : _wheels)
 	{
@@ -129,6 +132,8 @@ void Car::update()
 		printf("%f\n", _body->GetAngularVelocity());
 		fitness_penalty(10.0f);
 	}*/
+
+	_target_checkpoint = unit->checkpoints.at(reached_checkpoints() % unit->checkpoints.size());
 }
 
 void Car::render(sf::RenderTarget& target)
@@ -141,12 +146,18 @@ void Car::render(sf::RenderTarget& target)
 	Body::render(target);
 }
 
+void Car::fast_render(sf::RenderTarget& target)
+{
+	Body::render(target);
+}
+
 void Car::contact_checkpoint(Checkpoint& cp)
 {
 	if (_target_checkpoint == &cp)
 	{
-		_latest_checkpoint = &cp;
 		++_reached_checkpoints;
+		_latest_checkpoint = &cp;
+		_target_checkpoint = unit->checkpoints.at(reached_checkpoints() % unit->checkpoints.size());
 	}
 }
 
@@ -258,8 +269,8 @@ class RayCastCallback : public b2RayCastCallback
 	float ReportFixture(
 		b2Fixture* fixture, [[maybe_unused]] const b2Vec2& point, [[maybe_unused]] const b2Vec2& normal, float fraction)
 	{
-		auto* data = static_cast<BodyUserData*>(fixture->GetBody()->GetUserData());
-		if (data->type == BodyType::BodyWall)
+		auto& data = reinterpret_cast<BodyUserData&>(fixture->GetBody()->GetUserData().pointer);
+		if (data.type == BodyType::BodyWall)
 		{
 			closest_fraction = fraction;
 			return fraction;
@@ -276,15 +287,15 @@ void Car::compute_raycasts()
 	++_ray_update_frequency;
 
 	const size_t ray_count = _rays.size() / 2;
-	const float  radius    = 64.f;
+	const float  radius    = 96.f;
 	for (size_t i = 0; i < ray_count; ++i)
 	{
-		if ((i + _ray_update_frequency) % 6 != 0)
+		if ((i + _ray_update_frequency) % 1 != 0)
 		{
 			continue;
 		}
 
-		float rad_angle = _body->GetAngle() - (float(i) / float(ray_count - 1)) * float(M_PI);
+		float rad_angle = _body->GetAngle() - _ray_angles[i]/*(i / float(ray_count - 1))*/ * float(M_PI);
 
 		const b2Vec2 p1 = _body->GetPosition();
 		const b2Vec2 p2 = b2Vec2(p1.x + (cos(rad_angle) * radius), p1.y + (sin(rad_angle) * radius));
@@ -321,11 +332,11 @@ void Car::update_inputs(neural::Network& n)
 
 	std::size_t i = 0;
 
-	b2Vec2 objective_dir = 0.5f * direction_to_objective() + b2Vec2(0.5f, 0.5f);
+	const auto dir = direction_to_objective();
 
 	// inputs.neurons[i++].value = _net_feedback;
-	inputs[i++].partial_activation = objective_dir.x;
-	inputs[i++].partial_activation = objective_dir.y;
+	inputs[i++].partial_activation = dir.x * 0.5 + 0.5;
+	inputs[i++].partial_activation = dir.y * 0.5 + 0.5;
 	inputs[i++].partial_activation = util::lerp(0.0, 1.0, forward_velocity().Length() / 6.0f);
 	inputs[i++].partial_activation = util::lerp(0.0, 1.0, lateral_velocity().Length() / 1.0f);
 
@@ -333,5 +344,10 @@ void Car::update_inputs(neural::Network& n)
 	{
 		inputs[i].partial_activation = _ray_distances[j];
 	}
+
+	/*for (auto& input : inputs)
+	{
+		input.partial_activation += util::random_double(-0.1, 0.1);
+	}*/
 }
 } // namespace sim::entities
