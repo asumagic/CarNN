@@ -9,6 +9,7 @@ std::string_view name(ActivationMethod method)
 	case ActivationMethod::Sigmoid: return "sigmoid";
 	case ActivationMethod::LeakyRelu: return "lRELU";
 	case ActivationMethod::Sin: return "sin";
+	case ActivationMethod::SlowProp: return "slowprop";
 	case ActivationMethod::Total:
 	default: return "<invalid>";
 	}

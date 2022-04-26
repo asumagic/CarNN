@@ -262,14 +262,19 @@ ActivationMethod Mutator::random_activation_method()
 {
 	const double x = util::random_double();
 
+	if (x < 0.3)
+	{
+		return ActivationMethod::LeakyRelu;
+	}
+
 	if (x < 0.6)
 	{
-		return ActivationMethod::Sigmoid;
+		return ActivationMethod::SlowProp;
 	}
 
 	if (x < 0.9)
 	{
-		return ActivationMethod::LeakyRelu;
+		return ActivationMethod::Sigmoid;
 	}
 
 	return ActivationMethod::Sin;

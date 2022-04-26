@@ -21,16 +21,25 @@ class SimulationUnit
 	float       seconds_elapsed = 0.0f;
 };
 
+struct MapSettings
+{
+	std::string map_path;
+	std::string checkpoint_path;
+	bool flip = false;
+};
+
 class Simulation
 {
 	public:
-	Simulation();
+	Simulation(MapSettings settings);
 
-	void load_map(const char* fname);
-	void load_checkpoints(const char* fname);
+	void load_map();
+	void load_checkpoints();
 	void init_cars();
 
 	SimulationUnit& optimal_unit();
+
+	MapSettings settings;
 
 	std::vector<SimulationUnit> units;
 

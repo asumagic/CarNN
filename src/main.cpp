@@ -61,13 +61,18 @@ class App
 	void tick(Individual& individual);
 	void tick(SimulationUnit& unit);
 
-	void start_new_run();
+	void start_new_run(bool new_epoch);
 	void mutate_and_restart();
 
 	void reset_individuals();
 	void load_fonts();
 
+	std::vector<MapSettings> make_default_map_pool();
+
 	sf::RenderWindow _window;
+
+	std::vector<MapSettings> _map_pool;
+	int _current_map = 0;
 
 	Simulation      _sim;
 	SimulationState _simulation_state = SimulationState::Realtime;
@@ -89,7 +94,10 @@ class App
 	Individual* _tracked_individual = nullptr;
 };
 
-App::App() : _window(sf::VideoMode(800, 600), "carnn", sf::Style::Default, default_context_settings())
+App::App() :
+	_window(sf::VideoMode(800, 600), "carnn", sf::Style::Default, default_context_settings()),
+	_map_pool(make_default_map_pool()),
+	_sim(_map_pool[0])
 {
 	ImGui::SFML::Init(_window, false);
 	load_fonts();
@@ -103,7 +111,7 @@ void App::run()
 {
 	_tracked_individual = &_population[0];
 
-	start_new_run();
+	start_new_run(true);
 
 	while (_window.isOpen())
 	{
@@ -212,7 +220,7 @@ void App::frame()
 				cereal::BinaryInputArchive archive(is);
 				archive(*this);
 
-				start_new_run();
+				start_new_run(true);
 			}
 			break;
 
@@ -372,7 +380,7 @@ void App::frame()
 
 			if (ImGui::Button("Restart current run"))
 			{
-				start_new_run();
+				start_new_run(true);
 			}
 		}
 		ImGui::End();
@@ -567,9 +575,32 @@ void App::tick(SimulationUnit& unit)
 	unit.seconds_elapsed += 1.0f / 30.0f;
 }
 
-void App::start_new_run()
+void App::start_new_run(bool new_epoch)
 {
-	_sim = {};
+	if (new_epoch)
+	{
+		_current_map = 0;
+		_sim = {_map_pool[0]};
+	}
+	else
+	{
+		++_current_map;
+
+		std::vector<float> fitnesses(_sim.cars.size());
+
+		for (std::size_t i = 0; i < fitnesses.size(); ++i)
+		{
+			fitnesses[i] = _sim.cars[i]->fitness();
+		}
+
+		_sim = {_map_pool[_current_map]};
+
+		for (std::size_t i = 0; i < fitnesses.size(); ++i)
+		{
+			// YOLO
+			_sim.cars[i]->fitness_penalty(-fitnesses[i]);
+		}
+	}
 
 	_tracked_individual = &_population[0];
 
@@ -582,8 +613,17 @@ void App::start_new_run()
 
 void App::mutate_and_restart()
 {
-	_mutator.darwin(_sim, _population);
-	start_new_run();
+	if (_current_map < int(_map_pool.size()) - 1)
+	{
+		spdlog::info("... another iteration, loading map {}", _current_map + 1);
+		start_new_run(false);
+	}
+	else
+	{
+		spdlog::info("mutating and beginning new epoch");
+		_mutator.darwin(_sim, _population);
+		start_new_run(true);
+	}
 }
 
 void App::reset_individuals()
@@ -639,6 +679,14 @@ void App::load_fonts()
 
 		ImGui::SFML::UpdateFontTexture();
 	}
+}
+
+std::vector<MapSettings> App::make_default_map_pool()
+{
+	return {
+		MapSettings { "map.png", "map.json", true },
+		MapSettings { "map.png", "map.json", false },
+	};
 }
 
 int main()

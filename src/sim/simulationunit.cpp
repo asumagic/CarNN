@@ -12,16 +12,20 @@
 
 namespace sim
 {
-Simulation::Simulation() : units(24*32)
+Simulation::Simulation(MapSettings settings) :
+	settings(settings),
+	units(24*32)
 {
 	spdlog::info("reinitializing simulation");
-	load_map("map.png");
-	load_checkpoints("race.json");
+	load_map();
+	load_checkpoints();
 	init_cars();
 }
 
-void Simulation::load_map(const char* fname)
+void Simulation::load_map()
 {
+	const char* fname = settings.map_path.c_str();
+
 	spdlog::info("loading bitmap from file '{}'", fname);
 
 	sf::Image map;
@@ -37,6 +41,8 @@ void Simulation::load_map(const char* fname)
 		unit.wall = &unit.world.add_body(bdef);
 		unit.wall->set_type(sim::entities::BodyType::BodyWall);
 	}
+
+	const float flip_mul = settings.flip ? -1.0 : 1.0f;
 
 	std::vector<util::Line> eliminated;
 	sf::Vector2u            image_size = map.getSize();
@@ -57,11 +63,15 @@ void Simulation::load_map(const char* fname)
 
 						util::Line ln{{x * World::scale, y * World::scale}, {xn * World::scale, yn * World::scale}};
 
+						ln.p1.x *= flip_mul;
+						ln.p2.x *= flip_mul;
+
 						const sf::Color pixel = map.getPixel(xn, yn);
 						if (pixel == sf::Color::White)
 						{
 							if (std::find(begin(eliminated), end(eliminated), ln) == end(eliminated))
 							{
+
 								b2EdgeShape wall_shape;
 								wall_shape.SetTwoSided({ln.p1.x, ln.p1.y}, {ln.p2.x, ln.p2.y});
 
@@ -83,14 +93,17 @@ void Simulation::load_map(const char* fname)
 			}
 			else if (main_pixel.b == 255)
 			{
-				car_origin = {x * World::scale, y * World::scale};
+				car_origin = {x * flip_mul * World::scale, y * World::scale};
 			}
 		}
 	}
 }
 
-void Simulation::load_checkpoints(const char* fname)
+void Simulation::load_checkpoints()
 {
+	const char* fname = settings.checkpoint_path.c_str();
+	const float flip_mul = settings.flip ? -1.0 : 1.0f;
+
 	spdlog::info("loading checkpoints from file '{}'", fname);
 
 	std::ifstream           race_config{fname, std::ios::binary};
@@ -123,6 +136,9 @@ void Simulation::load_checkpoints(const char* fname)
 			p1.y += (p1.y > center.y) ? 5.f : -5.f;
 			p2.y += (p2.y > center.y) ? 5.f : -5.f;
 
+			p1.x *= flip_mul;
+			p2.x *= flip_mul;
+
 			const static sf::Color cp_col{0, 127, 0, 100};
 
 			checkpoint_vertices.append(sf::Vertex{p1, cp_col});
@@ -152,6 +168,11 @@ void Simulation::load_checkpoints(const char* fname)
 	for (SimulationUnit& unit : units)
 	{
 		unit.world.get().SetContactListener(&unit.contact_listener);
+
+		if (settings.flip)
+		{
+			std::reverse(unit.checkpoints.begin(), unit.checkpoints.end());
+		}
 	}
 }
 

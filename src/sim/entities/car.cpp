@@ -13,8 +13,8 @@ namespace sim::entities
 void CarCheckpointListener::BeginContact(b2Contact* contact)
 {
 	b2Fixture *   fixA = contact->GetFixtureA(), *fixB = contact->GetFixtureB();
-	auto &bodyA_BUD = reinterpret_cast<BodyUserData&>(fixA->GetBody()->GetUserData().pointer),
-	     &bodyB_BUD = reinterpret_cast<BodyUserData&>(fixB->GetBody()->GetUserData().pointer);
+	auto &bodyA_BUD = *reinterpret_cast<BodyUserData*>(fixA->GetBody()->GetUserData().pointer),
+		 &bodyB_BUD = *reinterpret_cast<BodyUserData*>(fixB->GetBody()->GetUserData().pointer);
 
 	if (bodyA_BUD.type == BodyType::BodyCar && bodyB_BUD.type == BodyType::BodyCheckpoint)
 		static_cast<Car*>(bodyA_BUD.body)->contact_checkpoint(*static_cast<Checkpoint*>(bodyB_BUD.body));
@@ -86,28 +86,6 @@ Car::Car(World& world, const b2BodyDef bdef, const bool do_render) : Body(world,
 	}
 }
 
-void Car::reset()
-{
-	dead                 = false;
-	_latest_checkpoint   = nullptr;
-	_reached_checkpoints = 0;
-	_fitness_bias        = 0.0f;
-	//_net_feedback = 0.0f;
-	_fitness              = 0.0f;
-	_acceleration_factor  = 1.0f;
-	_ray_update_frequency = 0;
-	_target_checkpoint    = unit->checkpoints[0];
-
-	for (Wheel* wheel : _wheels)
-	{
-		wheel->get().SetLinearVelocity({0.0f, 0.0f});
-		wheel->get().SetAngularVelocity(0.0f);
-	}
-
-	get().SetLinearVelocity({0.0f, 0.0f});
-	get().SetAngularVelocity(0.0f);
-}
-
 void Car::update()
 {
 	_body->SetSleepingAllowed(true);
@@ -153,11 +131,13 @@ void Car::fast_render(sf::RenderTarget& target)
 
 void Car::contact_checkpoint(Checkpoint& cp)
 {
-	if (_target_checkpoint == &cp)
+	if (&cp == _target_checkpoint)
 	{
 		++_reached_checkpoints;
 		_latest_checkpoint = &cp;
 		_target_checkpoint = unit->checkpoints.at(reached_checkpoints() % unit->checkpoints.size());
+	} else if (&cp != _latest_checkpoint) {
+		fitness_penalty(500000.0f);
 	}
 }
 
@@ -190,7 +170,7 @@ float Car::fitness() const
 
 	if (reached_checkpoints() == 0)
 	{
-		return 0.0f;
+		return _fitness_bias;
 	}
 
 	if (_target_checkpoint == nullptr)
@@ -220,7 +200,15 @@ float Car::fitness() const
 	return _fitness + _fitness_bias;
 }
 
-void Car::fitness_penalty(float value) { _fitness_bias -= value; }
+void Car::fitness_penalty(float value)
+{
+	_fitness_bias -= value;
+
+	if (_fitness_bias <= -1000)
+	{
+		dead = true;
+	}
+}
 
 void Car::wall_collision()
 {
@@ -269,7 +257,7 @@ class RayCastCallback : public b2RayCastCallback
 	float ReportFixture(
 		b2Fixture* fixture, [[maybe_unused]] const b2Vec2& point, [[maybe_unused]] const b2Vec2& normal, float fraction)
 	{
-		auto& data = reinterpret_cast<BodyUserData&>(fixture->GetBody()->GetUserData().pointer);
+		auto& data = *reinterpret_cast<BodyUserData*>(fixture->GetBody()->GetUserData().pointer);
 		if (data.type == BodyType::BodyWall)
 		{
 			closest_fraction = fraction;
@@ -290,7 +278,7 @@ void Car::compute_raycasts()
 	const float  radius    = 96.f;
 	for (size_t i = 0; i < ray_count; ++i)
 	{
-		if ((i + _ray_update_frequency) % 1 != 0)
+		if ((i + _ray_update_frequency) % 2 != 0)
 		{
 			continue;
 		}

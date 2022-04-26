@@ -9,6 +9,7 @@ enum class ActivationMethod : std::uint8_t
 	Sigmoid,
 	LeakyRelu,
 	Sin,
+	SlowProp,
 
 	Total
 };

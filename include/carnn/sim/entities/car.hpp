@@ -31,8 +31,6 @@ class Car : public Body
 	public:
 	Car(World& world, const b2BodyDef bdef, const bool do_render = true);
 
-	void reset(); // TODO: get rid of it
-
 	void update() override;
 	void render(sf::RenderTarget& target) override;
 	void fast_render(sf::RenderTarget& target);
