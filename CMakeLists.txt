@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.0)
 project(CarNN)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-Og -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto=thin -g")
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -flto=thin -g")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17 -fpch-instantiate-templates")
 
 include(~/vcpkg/scripts/buildsystems/vcpkg.cmake)
 
@@ -50,3 +50,5 @@ target_link_libraries(${PROJECT_NAME}
 	TBB::tbb
 	Microsoft.GSL::GSL
 )
+
+target_precompile_headers(${PROJECT_NAME} PUBLIC include/carnn/pch.hpp)
